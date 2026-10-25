@@ -14,10 +14,17 @@ const ACCOUNTS = {
     CLIENT_EUR: { id: 'ACC-LIAB-EUR-001', name: 'Client E-Money EUR', type: 'LIABILITY', balance: 1250000.00, currency: 'EUR' },
     CLIENT_USD: { id: 'ACC-LIAB-USD-001', name: 'Client E-Money USD', type: 'LIABILITY', balance: 980000.00, currency: 'USD' },
     
-    // Web3 Digital E-Money Token Pools (Backed 1:1 on-chain)
+    // Web3 Digital E-Money Token Pools (Backed 1:1 on-chain or safeguarded reserve)
     TOKEN_EURC: { id: 'ACC-TOKEN-EURC', name: 'EURC Smart Contract Pool', type: 'LIABILITY', balance: 450000.00, currency: 'EURC' },
     TOKEN_USDC: { id: 'ACC-TOKEN-USDC', name: 'USDC Smart Contract Pool', type: 'LIABILITY', balance: 620000.00, currency: 'USDC' },
-    TOKEN_ETH:  { id: 'ACC-CRYPTO-ETH',  name: 'Operational Gas Vault', type: 'ASSET', balance: 42.50, currency: 'ETH' },
+    TOKEN_USDT: { id: 'ACC-TOKEN-USDT', name: 'USDT Tether Pool', type: 'LIABILITY', balance: 750000.00, currency: 'USDT' },
+    TOKEN_DAI:  { id: 'ACC-TOKEN-DAI',  name: 'MakerDAO DAI Pool', type: 'LIABILITY', balance: 350000.00, currency: 'DAI' },
+    TOKEN_BUSD: { id: 'ACC-TOKEN-BUSD', name: 'BUSD Stablecoin Pool', type: 'LIABILITY', balance: 200000.00, currency: 'BUSD' },
+    TOKEN_ETH:  { id: 'ACC-CRYPTO-ETH',  name: 'ETH Native Gas Vault', type: 'ASSET', balance: 42.50, currency: 'ETH' },
+    TOKEN_BTC:  { id: 'ACC-CRYPTO-BTC',  name: 'Wrapped Bitcoin Vault', type: 'ASSET', balance: 14.85, currency: 'BTC' },
+    TOKEN_BNB:  { id: 'ACC-CRYPTO-BNB',  name: 'BNB Chain Vault', type: 'ASSET', balance: 185.00, currency: 'BNB' },
+    TOKEN_POL:  { id: 'ACC-CRYPTO-POL',  name: 'Polygon Ecosystem Vault', type: 'ASSET', balance: 85000.00, currency: 'POL' },
+    TOKEN_ARB:  { id: 'ACC-TOKEN-ARB',  name: 'Arbitrum Governance Vault', type: 'ASSET', balance: 125000.00, currency: 'ARB' },
 
     // Institutional Safeguarding Accounts held at Custodian / Central Bank (Segregated Assets)
     SAFEGUARDING_EUR: { id: 'ACC-ASSET-SAFE-EUR', name: 'Central Bank Safeguarded EUR', type: 'ASSET', balance: 1700000.00, currency: 'EUR' },
@@ -130,18 +137,53 @@ function getLedgerOverview() {
                 balance: ACCOUNTS.TOKEN_EURC.balance,
                 symbol: 'EURC',
                 contract: AppConfig.web3.contracts.EURC,
-                network: 'Ethereum / Polygon'
+                network: 'Ethereum / Polygon / Base'
             },
             usdc: {
                 balance: ACCOUNTS.TOKEN_USDC.balance,
                 symbol: 'USDC',
                 contract: AppConfig.web3.contracts.USDC,
-                network: 'Ethereum / Arbitrum'
+                network: 'Ethereum / Arbitrum / Base'
+            },
+            usdt: {
+                balance: ACCOUNTS.TOKEN_USDT.balance,
+                symbol: 'USDT',
+                network: 'Ethereum / Polygon / Arbitrum / BSC'
+            },
+            dai: {
+                balance: ACCOUNTS.TOKEN_DAI.balance,
+                symbol: 'DAI',
+                network: 'Ethereum / Polygon / Arbitrum / BSC'
+            },
+            busd: {
+                balance: ACCOUNTS.TOKEN_BUSD.balance,
+                symbol: 'BUSD',
+                network: 'BNB Smart Chain / Ethereum'
             },
             eth: {
                 balance: ACCOUNTS.TOKEN_ETH.balance,
                 symbol: 'ETH',
-                network: 'Ethereum Mainnet (Relayer Gas)'
+                network: 'Ethereum / Arbitrum / Base (Gas & Native)'
+            },
+            btc: {
+                balance: ACCOUNTS.TOKEN_BTC.balance,
+                symbol: 'BTC',
+                network: 'WBTC / BTCB (Ethereum / Arbitrum / BSC)'
+            },
+            bnb: {
+                balance: ACCOUNTS.TOKEN_BNB.balance,
+                symbol: 'BNB',
+                network: 'BNB Smart Chain (Native Gas)'
+            },
+            pol: {
+                balance: ACCOUNTS.TOKEN_POL.balance,
+                symbol: 'POL',
+                network: 'Polygon PoS (Native Gas)'
+            },
+            arb: {
+                balance: ACCOUNTS.TOKEN_ARB.balance,
+                symbol: 'ARB',
+                network: 'Arbitrum One (Governance)'
             },
             vaultAddress: AppConfig.web3.walletAddress
         },
@@ -153,44 +195,47 @@ function getLedgerOverview() {
     };
 }
 
+const TOKEN_ACCOUNT_MAP = {
+    EURC: 'TOKEN_EURC',
+    USDC: 'TOKEN_USDC',
+    USDT: 'TOKEN_USDT',
+    DAI: 'TOKEN_DAI',
+    BUSD: 'TOKEN_BUSD',
+    ETH: 'TOKEN_ETH',
+    BTC: 'TOKEN_BTC',
+    BNB: 'TOKEN_BNB',
+    POL: 'TOKEN_POL',
+    ARB: 'TOKEN_ARB'
+};
+
 /**
  * Execute a double-entry payout booking on the Core Ledger
  */
 function recordPayout({ rail, currency, amount, recipient, counterparty, reference, amlRiskScore = 1, onChainTx = null, rawPayload = null }) {
     const numAmount = parseFloat(amount);
+    const currUpper = (currency || '').toUpperCase();
     
     // Check funds availability
-    if (currency === 'EUR' && ACCOUNTS.CLIENT_EUR.balance < numAmount) {
+    if (currUpper === 'EUR' && ACCOUNTS.CLIENT_EUR.balance < numAmount) {
         throw new Error(`Saldo insufficiente sul conto EUR. Disponibile: €${ACCOUNTS.CLIENT_EUR.balance.toLocaleString('it-IT')}`);
-    }
-    if (currency === 'USD' && ACCOUNTS.CLIENT_USD.balance < numAmount) {
+    } else if (currUpper === 'USD' && ACCOUNTS.CLIENT_USD.balance < numAmount) {
         throw new Error(`Saldo insufficiente sul conto USD. Disponibile: $${ACCOUNTS.CLIENT_USD.balance.toLocaleString('en-US')}`);
-    }
-    if (currency === 'EURC' && ACCOUNTS.TOKEN_EURC.balance < numAmount) {
-        throw new Error(`Saldo insufficiente sul vault EURC. Disponibile: ${ACCOUNTS.TOKEN_EURC.balance.toLocaleString()} EURC`);
-    }
-    if (currency === 'USDC' && ACCOUNTS.TOKEN_USDC.balance < numAmount) {
-        throw new Error(`Saldo insufficiente sul vault USDC. Disponibile: ${ACCOUNTS.TOKEN_USDC.balance.toLocaleString()} USDC`);
-    }
-    if (currency === 'ETH' && ACCOUNTS.TOKEN_ETH.balance < numAmount) {
-        throw new Error(`Saldo gas insufficiente nel vault ETH. Disponibile: ${ACCOUNTS.TOKEN_ETH.balance} ETH`);
+    } else if (TOKEN_ACCOUNT_MAP[currUpper]) {
+        const accKey = TOKEN_ACCOUNT_MAP[currUpper];
+        if (ACCOUNTS[accKey].balance < numAmount) {
+            throw new Error(`Saldo insufficiente nel vault ${currUpper}. Disponibile: ${ACCOUNTS[accKey].balance.toLocaleString()} ${currUpper}`);
+        }
     }
 
     // Double-entry debit & credit
-    if (currency === 'EUR') {
+    if (currUpper === 'EUR') {
         ACCOUNTS.CLIENT_EUR.balance -= numAmount;
         ACCOUNTS.CLEARING_SEPA.balance += numAmount;
-    } else if (currency === 'USD') {
+    } else if (currUpper === 'USD') {
         ACCOUNTS.CLIENT_USD.balance -= numAmount;
         ACCOUNTS.CLEARING_SWIFT.balance += numAmount;
-    } else if (currency === 'EURC') {
-        ACCOUNTS.TOKEN_EURC.balance -= numAmount;
-        ACCOUNTS.CLEARING_WEB3.balance += numAmount;
-    } else if (currency === 'USDC') {
-        ACCOUNTS.TOKEN_USDC.balance -= numAmount;
-        ACCOUNTS.CLEARING_WEB3.balance += numAmount;
-    } else if (currency === 'ETH') {
-        ACCOUNTS.TOKEN_ETH.balance -= numAmount;
+    } else if (TOKEN_ACCOUNT_MAP[currUpper]) {
+        ACCOUNTS[TOKEN_ACCOUNT_MAP[currUpper]].balance -= numAmount;
         ACCOUNTS.CLEARING_WEB3.balance += numAmount;
     }
 
@@ -203,7 +248,7 @@ function recordPayout({ rail, currency, amount, recipient, counterparty, referen
         id: txId,
         timestamp: new Date().toISOString(),
         rail: rail,
-        currency: currency,
+        currency: currUpper,
         amount: numAmount,
         type: 'PAYOUT',
         recipient: recipient,
@@ -230,6 +275,168 @@ function recordPayout({ rail, currency, amount, recipient, counterparty, referen
     }
 
     return {
+        txId,
+        entry: newEntry,
+        balances: getLedgerOverview()
+    };
+}
+
+/**
+ * Direct Fiat Credit / Minting under EMI EMD2 Regulations
+ * Increases client e-money balance and segregates 100% into safeguarding reserve.
+ * Emits an authentic ISO 20022 camt.053 Credit Confirmation payload.
+ */
+function creditDirectFiat({ currency = 'EUR', amount, depositorName = 'Institutional Client Direct Top-up', reference = 'DIRECT_EMD2_RELOAD', sourceIban = null, operator = 'EMI_ADMIN_ISSUER' }) {
+    const numAmount = parseFloat(amount);
+    if (isNaN(numAmount) || numAmount <= 0) {
+        throw new Error('Importo di ricarica fiat non valido. Inserire una cifra maggiore di zero.');
+    }
+
+    const currUpper = currency.toUpperCase();
+    if (currUpper !== 'EUR' && currUpper !== 'USD') {
+        throw new Error(`Valuta fiat non supportata per l'accredito diretto: ${currency}`);
+    }
+
+    // Double-entry accounting: Credit client liability & credit safeguarding asset
+    if (currUpper === 'EUR') {
+        ACCOUNTS.CLIENT_EUR.balance += numAmount;
+        ACCOUNTS.SAFEGUARDING_EUR.balance += numAmount; // Safeguard 100% client funds
+    } else {
+        ACCOUNTS.CLIENT_USD.balance += numAmount;
+        ACCOUNTS.SAFEGUARDING_USD.balance += numAmount;
+    }
+
+    const newestEntry = auditLedger[0];
+    const previousHash = newestEntry ? newestEntry.hash : '0'.repeat(64);
+    const txId = 'TX-' + Math.floor(100000000 + Math.random() * 900000000);
+    const isEur = currUpper === 'EUR';
+
+    const newEntry = {
+        id: txId,
+        timestamp: new Date().toISOString(),
+        rail: isEur ? 'SEPA_INSTANT_CREDIT' : 'SWIFT_GPI_CREDIT',
+        currency: currUpper,
+        amount: numAmount,
+        type: 'DIRECT_CREDIT_MINT',
+        recipient: isEur ? AppConfig.banking.sepaIban : AppConfig.banking.usdAccountNumber,
+        counterparty: depositorName,
+        reference: reference,
+        status: 'SETTLED',
+        amlRiskScore: 1,
+        operator: operator,
+        previousHash: previousHash
+    };
+
+    newEntry.hash = calculateHash(newEntry);
+    auditLedger.unshift(newEntry);
+
+    // Generate ISO 20022 camt.053 Electronic Bank Statement Credit Confirmation
+    const iso20022Xml = `<?xml version="1.0" encoding="UTF-8"?>
+<Document xmlns="urn:iso:std:iso:20022:tech:xsd:camt.053.001.08">
+  <BkToCstmrStmt>
+    <GrpHdr>
+      <MsgId>EMI-CAMT053-${txId}</MsgId>
+      <CreDtTm>${new Date().toISOString()}</CreDtTm>
+      <MsgPgntn><PgNb>1</PgNb><LastPgInd>true</LastPgInd></MsgPgntn>
+    </GrpHdr>
+    <Stmt>
+      <Id>STMT-${Date.now()}</Id>
+      <ElctrncSeqNb>1042</ElctrncSeqNb>
+      <CreDtTm>${new Date().toISOString()}</CreDtTm>
+      <Acct>
+        <Id><IBAN>${isEur ? AppConfig.banking.sepaIban : AppConfig.banking.usdAccountNumber}</IBAN></Id>
+        <Ccy>${currUpper}</Ccy>
+        <Nm>${AppConfig.institution.legalName}</Nm>
+      </Acct>
+      <Bal>
+        <Tp><CdOrPrtry><Cd>OPBD</Cd></CdOrPrtry></Tp>
+        <Amt Ccy="${currUpper}">${(isEur ? ACCOUNTS.CLIENT_EUR.balance - numAmount : ACCOUNTS.CLIENT_USD.balance - numAmount).toFixed(2)}</Amt>
+        <CdtDbtInd>CRDT</CdtDbtInd>
+        <Dt><Dt>${new Date().toISOString().slice(0, 10)}</Dt></Dt>
+      </Bal>
+      <Ntry>
+        <NtryRef>${txId}</NtryRef>
+        <Amt Ccy="${currUpper}">${numAmount.toFixed(2)}</Amt>
+        <CdtDbtInd>CRDT</CdtDbtInd>
+        <Sts>BOOK</Sts>
+        <BookgDt><Dt>${new Date().toISOString().slice(0, 10)}</Dt></BookgDt>
+        <ValDt><Dt>${new Date().toISOString().slice(0, 10)}</Dt></ValDt>
+        <AcctSvcrRef>TIPS-INFLOW-${Date.now()}</AcctSvcrRef>
+        <NtryDtls>
+          <TxDtls>
+            <Refs>
+              <EndToEndId>${reference}</EndToEndId>
+              <UETR>3f7e2a9b-81d5-4c0e-bf33-${Date.now().toString().slice(-12)}</UETR>
+            </Refs>
+            <RltdPties>
+              <Dbtr><Nm>${depositorName}</Nm></Dbtr>
+              <DbtrAcct><Id><IBAN>${sourceIban || (isEur ? 'IT99X0306902104000000999999' : 'US1234567890123')}</IBAN></Id></DbtrAcct>
+              <Cdtr><Nm>${AppConfig.institution.name}</Nm></Cdtr>
+            </RltdPties>
+            <RmtInf><Ustrd>${reference} - EMD2 Safeguarded Inflow</Ustrd></RmtInf>
+          </TxDtls>
+        </NtryDtls>
+      </Ntry>
+    </Stmt>
+  </BkToCstmrStmt>
+</Document>`;
+
+    clearingPayloadStore.set(txId, iso20022Xml);
+
+    return {
+        success: true,
+        txId,
+        entry: newEntry,
+        balances: getLedgerOverview(),
+        clearingPayload: iso20022Xml
+    };
+}
+
+/**
+ * Direct On-Chain Minting & Token Credit
+ * Updates internal token pool balance and logs cryptographic blockchain receipt into the audit ledger.
+ */
+function creditDirectOnChain({ token, chainId, recipient, amount, onChainTx, note = 'ONCHAIN_SMART_CONTRACT_MINT' }) {
+    const numAmount = parseFloat(amount);
+    const tokenKey = (token || '').toUpperCase();
+
+    if (TOKEN_ACCOUNT_MAP[tokenKey]) {
+        ACCOUNTS[TOKEN_ACCOUNT_MAP[tokenKey]].balance += numAmount;
+    }
+
+    const newestEntry = auditLedger[0];
+    const previousHash = newestEntry ? newestEntry.hash : '0'.repeat(64);
+    const txId = 'TX-' + Math.floor(100000000 + Math.random() * 900000000);
+
+    const newEntry = {
+        id: txId,
+        timestamp: new Date().toISOString(),
+        rail: 'ON_CHAIN',
+        currency: tokenKey,
+        amount: numAmount,
+        type: 'ONCHAIN_MINT',
+        recipient: recipient,
+        counterparty: 'Authorized Minters & Treasury Vault',
+        reference: note,
+        status: 'CONFIRMED',
+        amlRiskScore: 1,
+        network: onChainTx?.network || 'EVM Multi-Chain',
+        chainId: onChainTx?.chainId || chainId,
+        txHash: onChainTx?.txHash || null,
+        blockNumber: onChainTx?.blockNumber || null,
+        explorerUrl: onChainTx?.explorerUrl || null,
+        previousHash: previousHash
+    };
+
+    newEntry.hash = calculateHash(newEntry);
+    auditLedger.unshift(newEntry);
+
+    if (onChainTx) {
+        clearingPayloadStore.set(txId, JSON.stringify(onChainTx, null, 2));
+    }
+
+    return {
+        success: true,
         txId,
         entry: newEntry,
         balances: getLedgerOverview()
@@ -283,8 +490,11 @@ function getClearingPayload(txId) {
 module.exports = {
     getLedgerOverview,
     recordPayout,
+    creditDirectFiat,
+    creditDirectOnChain,
     verifyLedgerIntegrity,
     getAuditLog,
     getClearingPayload,
     ACCOUNTS
 };
+

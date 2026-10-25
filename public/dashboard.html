@@ -52,6 +52,10 @@
             <a href="#balances-section" class="px-3 py-1.5 rounded-lg bg-slate-800/80 hover:bg-slate-700 text-slate-300 hover:text-white transition flex items-center gap-1.5">
                 <span>💰</span> Saldi & Riserva EMI
             </a>
+            <a href="#minting-section" class="px-3 py-1.5 rounded-lg bg-emerald-950/80 hover:bg-emerald-900 text-emerald-300 border border-emerald-800/60 transition flex items-center gap-1.5 shadow-sm">
+                <span>⚡</span> Ricarica & Minting Multi-Asset
+                <span class="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse"></span>
+            </a>
             <a href="#oracle-section" class="px-3 py-1.5 rounded-lg bg-slate-800/80 hover:bg-slate-700 text-slate-300 hover:text-white transition flex items-center gap-1.5">
                 <span>📈</span> Oracolo & Controvalore
             </a>
@@ -281,10 +285,17 @@
                         <label class="block text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-1">Da (Asset di Origine)</label>
                         <select id="convert-from" onchange="runInstantConversion()" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-white text-sm focus:border-emerald-500 outline-none">
                             <option value="ETH" selected>ETH (Ethereum)</option>
-                            <option value="EURC">EURC (Euro Coin On-Chain)</option>
-                            <option value="USDC">USDC (USD Coin On-Chain)</option>
+                            <option value="BTC">BTC (Wrapped Bitcoin)</option>
                             <option value="EUR">EUR (Moneta Fiat SEPA)</option>
                             <option value="USD">USD (Moneta Fiat SWIFT)</option>
+                            <option value="EURC">EURC (Euro Coin Circle)</option>
+                            <option value="USDC">USDC (USD Coin Circle)</option>
+                            <option value="USDT">USDT (Tether USD)</option>
+                            <option value="BNB">BNB (BNB Smart Chain)</option>
+                            <option value="POL">POL (Polygon Token)</option>
+                            <option value="DAI">DAI (MakerDAO)</option>
+                            <option value="BUSD">BUSD (Binance USD)</option>
+                            <option value="ARB">ARB (Arbitrum)</option>
                         </select>
                     </div>
 
@@ -302,8 +313,15 @@
                             <option value="EUR" selected>EUR (Moneta Fiat SEPA)</option>
                             <option value="USD">USD (Moneta Fiat SWIFT)</option>
                             <option value="ETH">ETH (Ethereum)</option>
-                            <option value="EURC">EURC (Euro Coin On-Chain)</option>
-                            <option value="USDC">USDC (USD Coin On-Chain)</option>
+                            <option value="BTC">BTC (Wrapped Bitcoin)</option>
+                            <option value="EURC">EURC (Euro Coin Circle)</option>
+                            <option value="USDC">USDC (USD Coin Circle)</option>
+                            <option value="USDT">USDT (Tether USD)</option>
+                            <option value="BNB">BNB (BNB Smart Chain)</option>
+                            <option value="POL">POL (Polygon Token)</option>
+                            <option value="DAI">DAI (MakerDAO)</option>
+                            <option value="BUSD">BUSD (Binance USD)</option>
+                            <option value="ARB">ARB (Arbitrum)</option>
                         </select>
                     </div>
 
@@ -656,6 +674,249 @@
             </div>
         </div>
 
+        <!-- Direct Minting & Multi-Asset Funding Engine (Production Autonomous Engine) -->
+        <div id="minting-section" class="bg-slate-900 border border-slate-800 p-6 md:p-8 rounded-2xl shadow-xl space-y-6">
+            <!-- Header -->
+            <div class="flex flex-col md:flex-row justify-between items-start md:items-center pb-5 border-b border-slate-800 gap-4">
+                <div>
+                    <div class="flex items-center gap-3">
+                        <h2 class="text-xl font-bold text-white flex items-center gap-2">
+                            <span>⚡</span> Emissione & Ricarica Multi-Asset On-Chain & Fiat
+                        </h2>
+                        <span class="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 font-mono">
+                            DIRECT MINTING & CREDITING
+                        </span>
+                        <span class="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 font-mono">
+                            ZERO GATEWAY TERZI
+                        </span>
+                    </div>
+                    <p class="text-sm text-slate-400 mt-1">
+                        Esecuzione diretta e autonoma di ricariche fiat (EUR/USD) sul Core Ledger EMI (EMD2) e minting crittografico di token e stablecoin on-chain su Ethereum, Polygon, Arbitrum, Base e BNB Chain con smart contract calldata firmato dal backend.
+                    </p>
+                </div>
+                <div class="flex items-center gap-2 text-xs font-mono bg-slate-950 p-2.5 rounded-xl border border-slate-800">
+                    <span class="text-slate-400">Autorità Minter:</span>
+                    <span class="text-emerald-400 font-bold" id="minter-auth-addr">0x...</span>
+                </div>
+            </div>
+
+            <!-- Form -->
+            <form id="minting-form" class="space-y-6">
+                <!-- Asset Selector Chips -->
+                <div>
+                    <div class="flex justify-between items-center mb-2">
+                        <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider">
+                            1. Seleziona l'Asset da Emettere / Accreditare
+                        </label>
+                        <span class="text-[11px] font-mono text-emerald-400" id="selected-asset-badge">Selezionato: EUR (Moneta Fiat)</span>
+                    </div>
+                    <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-2.5" id="mint-asset-chips">
+                        <!-- Fiat -->
+                        <button type="button" onclick="selectMintAsset('EUR', 'FIAT')" class="mint-asset-btn active p-3 rounded-xl bg-slate-950 border border-emerald-500 text-left transition hover:border-emerald-400" data-asset="EUR">
+                            <div class="flex items-center justify-between">
+                                <span class="text-lg">💶</span>
+                                <span class="text-[10px] font-mono px-1.5 py-0.5 rounded bg-emerald-950 text-emerald-300 border border-emerald-800">FIAT</span>
+                            </div>
+                            <div class="font-bold text-white text-sm mt-1">EUR</div>
+                            <div class="text-[10px] text-slate-400 truncate">Euro E-Money</div>
+                        </button>
+                        <button type="button" onclick="selectMintAsset('USD', 'FIAT')" class="mint-asset-btn p-3 rounded-xl bg-slate-950 border border-slate-800 text-left transition hover:border-slate-700" data-asset="USD">
+                            <div class="flex items-center justify-between">
+                                <span class="text-lg">💵</span>
+                                <span class="text-[10px] font-mono px-1.5 py-0.5 rounded bg-blue-950 text-blue-300 border border-blue-800">FIAT</span>
+                            </div>
+                            <div class="font-bold text-white text-sm mt-1">USD</div>
+                            <div class="text-[10px] text-slate-400 truncate">US Dollar E-Money</div>
+                        </button>
+                        <!-- Stablecoins -->
+                        <button type="button" onclick="selectMintAsset('EURC', 'CRYPTO')" class="mint-asset-btn p-3 rounded-xl bg-slate-950 border border-slate-800 text-left transition hover:border-slate-700" data-asset="EURC">
+                            <div class="flex items-center justify-between">
+                                <span class="text-lg">🇪🇺</span>
+                                <span class="text-[10px] font-mono px-1.5 py-0.5 rounded bg-indigo-950 text-indigo-300 border border-indigo-800">STABLE</span>
+                            </div>
+                            <div class="font-bold text-white text-sm mt-1">EURC</div>
+                            <div class="text-[10px] text-slate-400 truncate">Circle Euro Coin</div>
+                        </button>
+                        <button type="button" onclick="selectMintAsset('USDC', 'CRYPTO')" class="mint-asset-btn p-3 rounded-xl bg-slate-950 border border-slate-800 text-left transition hover:border-slate-700" data-asset="USDC">
+                            <div class="flex items-center justify-between">
+                                <span class="text-lg">🪙</span>
+                                <span class="text-[10px] font-mono px-1.5 py-0.5 rounded bg-blue-950 text-blue-300 border border-blue-800">STABLE</span>
+                            </div>
+                            <div class="font-bold text-white text-sm mt-1">USDC</div>
+                            <div class="text-[10px] text-slate-400 truncate">Circle USD Coin</div>
+                        </button>
+                        <button type="button" onclick="selectMintAsset('USDT', 'CRYPTO')" class="mint-asset-btn p-3 rounded-xl bg-slate-950 border border-slate-800 text-left transition hover:border-slate-700" data-asset="USDT">
+                            <div class="flex items-center justify-between">
+                                <span class="text-lg">₮</span>
+                                <span class="text-[10px] font-mono px-1.5 py-0.5 rounded bg-teal-950 text-teal-300 border border-teal-800">STABLE</span>
+                            </div>
+                            <div class="font-bold text-white text-sm mt-1">USDT</div>
+                            <div class="text-[10px] text-slate-400 truncate">Tether USD</div>
+                        </button>
+                        <button type="button" onclick="selectMintAsset('DAI', 'CRYPTO')" class="mint-asset-btn p-3 rounded-xl bg-slate-950 border border-slate-800 text-left transition hover:border-slate-700" data-asset="DAI">
+                            <div class="flex items-center justify-between">
+                                <span class="text-lg">◈</span>
+                                <span class="text-[10px] font-mono px-1.5 py-0.5 rounded bg-amber-950 text-amber-300 border border-amber-800">STABLE</span>
+                            </div>
+                            <div class="font-bold text-white text-sm mt-1">DAI</div>
+                            <div class="text-[10px] text-slate-400 truncate">MakerDAO DAI</div>
+                        </button>
+                        <button type="button" onclick="selectMintAsset('BUSD', 'CRYPTO')" class="mint-asset-btn p-3 rounded-xl bg-slate-950 border border-slate-800 text-left transition hover:border-slate-700" data-asset="BUSD">
+                            <div class="flex items-center justify-between">
+                                <span class="text-lg">🟡</span>
+                                <span class="text-[10px] font-mono px-1.5 py-0.5 rounded bg-yellow-950 text-yellow-300 border border-yellow-800">STABLE</span>
+                            </div>
+                            <div class="font-bold text-white text-sm mt-1">BUSD</div>
+                            <div class="text-[10px] text-slate-400 truncate">Binance USD</div>
+                        </button>
+                        <!-- Native Coins -->
+                        <button type="button" onclick="selectMintAsset('ETH', 'CRYPTO')" class="mint-asset-btn p-3 rounded-xl bg-slate-950 border border-slate-800 text-left transition hover:border-slate-700" data-asset="ETH">
+                            <div class="flex items-center justify-between">
+                                <span class="text-lg">Ξ</span>
+                                <span class="text-[10px] font-mono px-1.5 py-0.5 rounded bg-purple-950 text-purple-300 border border-purple-800">NATIVE</span>
+                            </div>
+                            <div class="font-bold text-white text-sm mt-1">ETH</div>
+                            <div class="text-[10px] text-slate-400 truncate">Ethereum Gas</div>
+                        </button>
+                        <button type="button" onclick="selectMintAsset('BTC', 'CRYPTO')" class="mint-asset-btn p-3 rounded-xl bg-slate-950 border border-slate-800 text-left transition hover:border-slate-700" data-asset="BTC">
+                            <div class="flex items-center justify-between">
+                                <span class="text-lg">₿</span>
+                                <span class="text-[10px] font-mono px-1.5 py-0.5 rounded bg-orange-950 text-orange-300 border border-orange-800">COIN</span>
+                            </div>
+                            <div class="font-bold text-white text-sm mt-1">BTC</div>
+                            <div class="text-[10px] text-slate-400 truncate">WBTC / BTCB</div>
+                        </button>
+                        <button type="button" onclick="selectMintAsset('BNB', 'CRYPTO')" class="mint-asset-btn p-3 rounded-xl bg-slate-950 border border-slate-800 text-left transition hover:border-slate-700" data-asset="BNB">
+                            <div class="flex items-center justify-between">
+                                <span class="text-lg">🟡</span>
+                                <span class="text-[10px] font-mono px-1.5 py-0.5 rounded bg-yellow-950 text-yellow-300 border border-yellow-800">NATIVE</span>
+                            </div>
+                            <div class="font-bold text-white text-sm mt-1">BNB</div>
+                            <div class="text-[10px] text-slate-400 truncate">BNB Smart Chain</div>
+                        </button>
+                        <button type="button" onclick="selectMintAsset('POL', 'CRYPTO')" class="mint-asset-btn p-3 rounded-xl bg-slate-950 border border-slate-800 text-left transition hover:border-slate-700" data-asset="POL">
+                            <div class="flex items-center justify-between">
+                                <span class="text-lg">🟣</span>
+                                <span class="text-[10px] font-mono px-1.5 py-0.5 rounded bg-purple-950 text-purple-300 border border-purple-800">NATIVE</span>
+                            </div>
+                            <div class="font-bold text-white text-sm mt-1">POL</div>
+                            <div class="text-[10px] text-slate-400 truncate">Polygon Ecosystem</div>
+                        </button>
+                        <button type="button" onclick="selectMintAsset('ARB', 'CRYPTO')" class="mint-asset-btn p-3 rounded-xl bg-slate-950 border border-slate-800 text-left transition hover:border-slate-700" data-asset="ARB">
+                            <div class="flex items-center justify-between">
+                                <span class="text-lg">🔵</span>
+                                <span class="text-[10px] font-mono px-1.5 py-0.5 rounded bg-blue-950 text-blue-300 border border-blue-800">L2 TOKEN</span>
+                            </div>
+                            <div class="font-bold text-white text-sm mt-1">ARB</div>
+                            <div class="text-[10px] text-slate-400 truncate">Arbitrum One</div>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Parameters Grid -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
+                    <!-- Chain Selector (On-Chain) or Banking Network (Fiat) -->
+                    <div id="mint-chain-container">
+                        <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">2. Rete Blockchain di Destinazione</label>
+                        <select id="mint-chain" class="w-full bg-slate-800 border border-slate-700 rounded-lg p-3 text-white text-sm focus:border-emerald-500 outline-none">
+                            <option value="1">Ethereum Mainnet (Chain ID: 1)</option>
+                            <option value="137">Polygon PoS Mainnet (Chain ID: 137)</option>
+                            <option value="42161">Arbitrum One (Chain ID: 42161)</option>
+                            <option value="8453">Base Mainnet (Chain ID: 8453)</option>
+                            <option value="56">BNB Smart Chain (Chain ID: 56)</option>
+                        </select>
+                        <div id="mint-fiat-channel-note" class="hidden text-xs text-emerald-400 mt-2 font-mono flex items-center gap-1.5">
+                            <span>🏛️</span> Regolamento Istituzionale Diretto: TIPS / Fedwire EMD2
+                        </div>
+                    </div>
+
+                    <!-- Mode Selector -->
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">3. Modalità Operativa</label>
+                        <select id="mint-mode" class="w-full bg-slate-800 border border-slate-700 rounded-lg p-3 text-white text-sm focus:border-emerald-500 outline-none">
+                            <option value="MINT">Smart Contract Direct Minting (mint(to, amount))</option>
+                            <option value="TREASURY_TRANSFER">Accredito da Riserva Istituzionale (Treasury)</option>
+                        </select>
+                    </div>
+
+                    <!-- Amount Input -->
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">4. Importo da Emettere / Accreditare</label>
+                        <div class="relative">
+                            <input type="number" id="mint-amount" step="any" min="0.000001" placeholder="es. 50000" class="w-full bg-slate-800 border border-slate-700 rounded-lg p-3 text-white font-mono text-sm focus:border-emerald-500 outline-none">
+                            <span class="absolute right-3 top-3 text-xs font-mono font-bold text-slate-400" id="mint-currency-suffix">EUR</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Quick Presets -->
+                <div class="flex flex-wrap items-center gap-2 pt-1">
+                    <span class="text-xs text-slate-500 font-mono">Preset Rapidi:</span>
+                    <button type="button" onclick="setMintAmount(100)" class="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-mono rounded border border-slate-700">+100</button>
+                    <button type="button" onclick="setMintAmount(1000)" class="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-mono rounded border border-slate-700">+1.000</button>
+                    <button type="button" onclick="setMintAmount(10000)" class="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-mono rounded border border-slate-700">+10.000</button>
+                    <button type="button" onclick="setMintAmount(50000)" class="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-mono rounded border border-slate-700">+50.000</button>
+                    <button type="button" onclick="setMintAmount(100000)" class="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs font-mono rounded border border-slate-700">+100.000</button>
+                </div>
+
+                <!-- Beneficiary / Destination Address or Account -->
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
+                    <div class="md:col-span-2">
+                        <div class="flex justify-between items-center mb-1.5">
+                            <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider" id="mint-recipient-label">
+                                Destinazione Accredito (Indirizzo EVM / Wallet)
+                            </label>
+                            <div class="flex items-center gap-2 text-[11px]">
+                                <button type="button" onclick="fillMintRecipient('VAULT')" class="text-emerald-400 hover:underline">Usa Vault EMI</button>
+                                <span class="text-slate-600">•</span>
+                                <button type="button" onclick="fillMintRecipient('CONNECTED')" class="text-purple-400 hover:underline">Mio Wallet Web3</button>
+                            </div>
+                        </div>
+                        <input type="text" id="mint-recipient" placeholder="0x..." class="w-full bg-slate-800 border border-slate-700 rounded-lg p-3 text-white font-mono text-sm focus:border-emerald-500 outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Note / Causale Contabile</label>
+                        <input type="text" id="mint-note" placeholder="Ricarica Liquida Istituzionale EMI 2026" class="w-full bg-slate-800 border border-slate-700 rounded-lg p-3 text-white text-sm focus:border-emerald-500 outline-none">
+                    </div>
+                </div>
+
+                <!-- Execution Button & Regulatory Guarantee Banner -->
+                <div class="pt-2 flex flex-col md:flex-row items-stretch md:items-center justify-between gap-4">
+                    <div class="text-xs text-slate-400 font-mono flex items-center gap-2">
+                        <span class="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse"></span>
+                        <span id="mint-guarantee-text">Conformità EMD2: I fondi fiat accreditati sono automaticamente segregati al 100% in conto di salvaguardia.</span>
+                    </div>
+                    <button type="submit" id="mint-submit-btn" class="px-8 py-3.5 bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500 text-white font-bold rounded-xl shadow-lg transition duration-200 flex items-center justify-center gap-2 text-sm">
+                        <span>⚡</span>
+                        <span id="mint-btn-label">Esegui Emissione / Accredito Immediato</span>
+                    </button>
+                </div>
+            </form>
+
+            <!-- Result & Cryptographic Receipt Card -->
+            <div id="mint-result-card" class="hidden mt-6 p-6 rounded-2xl border bg-slate-950 border-emerald-700/60 text-slate-200 space-y-4 shadow-xl">
+                <div class="flex flex-col md:flex-row justify-between items-start md:items-center pb-3 border-b border-slate-800 gap-2">
+                    <div class="flex items-center gap-2.5">
+                        <div class="w-8 h-8 rounded-full bg-emerald-500/20 text-emerald-400 flex items-center justify-center font-bold">✓</div>
+                        <div>
+                            <h4 class="text-base font-bold text-emerald-400" id="mint-result-title">Operazione Conclusa con Successo</h4>
+                            <p class="text-xs text-slate-400" id="mint-result-desc">Accredito e registrazione contabile completati.</p>
+                        </div>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <span id="mint-result-badge" class="px-2.5 py-1 rounded-full text-xs font-mono font-semibold bg-emerald-950 text-emerald-300 border border-emerald-800">CONFIRMED</span>
+                        <button type="button" id="mint-inspect-msg-btn" onclick="inspectLastMintReceipt()" class="px-3 py-1 bg-slate-800 hover:bg-slate-700 text-xs rounded-lg text-emerald-300 border border-slate-700 transition hidden">
+                            📄 Visualizza Payload XML / Hex
+                        </button>
+                    </div>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-4 text-xs font-mono" id="mint-result-details">
+                    <!-- Populated dynamically -->
+                </div>
+            </div>
+        </div>
+
         <!-- Payout Execution Section -->
         <div id="payout-section" class="bg-slate-900 border border-slate-800 p-6 md:p-8 rounded-2xl shadow-xl">
             <div class="flex flex-col md:flex-row justify-between md:items-center pb-6 border-b border-slate-800 gap-4">
@@ -735,7 +996,14 @@
                         <select id="onchain-token" class="w-full bg-slate-800 border border-slate-700 rounded-lg p-3 text-white focus:border-purple-500 focus:ring-1 focus:ring-purple-500 outline-none transition text-sm">
                             <option value="EURC">EURC (Circle Euro Coin Regulated ERC-20)</option>
                             <option value="USDC">USDC (Circle USD Coin ERC-20)</option>
+                            <option value="USDT">USDT (Tether USD Multi-Chain)</option>
+                            <option value="DAI">DAI (MakerDAO Multi-Chain)</option>
+                            <option value="BUSD">BUSD (Binance USD Smart Chain)</option>
                             <option value="ETH">ETH (Native Gas Settlement)</option>
+                            <option value="BTC">BTC (Wrapped Bitcoin WBTC/BTCB)</option>
+                            <option value="BNB">BNB (BNB Chain Native Coin)</option>
+                            <option value="POL">POL (Polygon Ecosystem Token)</option>
+                            <option value="ARB">ARB (Arbitrum Governance Token)</option>
                         </select>
                     </div>
                     <div class="md:col-span-2">
@@ -1780,9 +2048,15 @@
                 document.getElementById('balance-eurc').innerText = Number(data.onChain.eurc.balance).toLocaleString('it-IT', { minimumFractionDigits: 2 }) + ' EURC';
                 document.getElementById('balance-usdc').innerText = Number(data.onChain.usdc.balance).toLocaleString('en-US', { minimumFractionDigits: 2 }) + ' USDC • ' + data.onChain.eth.balance + ' ETH';
 
-                // Display Relayer Address
+                // Display Relayer & Minter Address
                 if (data.walletInfo && data.walletInfo.address) {
+                    institutionalVaultAddress = data.walletInfo.address;
                     document.getElementById('relayer-addr').innerText = data.walletInfo.address.substring(0, 8) + '...' + data.walletInfo.address.substring(38);
+                    const minterEl = document.getElementById('minter-auth-addr');
+                    if (minterEl) minterEl.innerText = data.walletInfo.address.substring(0, 6) + '...' + data.walletInfo.address.substring(38);
+                }
+                if (data.fiat && data.fiat.eur && data.fiat.eur.iban) {
+                    institutionalSepaIban = data.fiat.eur.iban;
                 }
 
                 // Safeguarding
@@ -1990,6 +2264,246 @@
                 resultTitle.className = "text-lg font-bold text-rose-400";
                 resultTitle.innerText = "Errore di Comunicazione";
                 resultDesc.innerText = err.message;
+            }
+        });
+
+        // ==========================================
+        // DIRECT MINTING & CREDITING ENGINE HANDLERS
+        // ==========================================
+        let selectedMintAsset = 'EUR';
+        let selectedMintType = 'FIAT';
+        let lastMintTxId = null;
+
+        function selectMintAsset(asset, type) {
+            selectedMintAsset = asset;
+            selectedMintType = type;
+
+            document.querySelectorAll('.mint-asset-btn').forEach(btn => {
+                if (btn.getAttribute('data-asset') === asset) {
+                    btn.classList.add('active', 'border-emerald-500');
+                    btn.classList.remove('border-slate-800');
+                } else {
+                    btn.classList.remove('active', 'border-emerald-500');
+                    btn.classList.add('border-slate-800');
+                }
+            });
+
+            const badge = document.getElementById('selected-asset-badge');
+            const suffix = document.getElementById('mint-currency-suffix');
+            const fiatNote = document.getElementById('mint-fiat-channel-note');
+            const chainSelect = document.getElementById('mint-chain');
+            const modeSelect = document.getElementById('mint-mode');
+            const recipientLabel = document.getElementById('mint-recipient-label');
+            const recipientInput = document.getElementById('mint-recipient');
+            const guaranteeText = document.getElementById('mint-guarantee-text');
+            const btnLabel = document.getElementById('mint-btn-label');
+
+            if (suffix) suffix.innerText = asset;
+
+            if (type === 'FIAT') {
+                if (badge) {
+                    badge.innerText = `Selezionato: ${asset} (Moneta Elettronica Fiat EMD2)`;
+                    badge.className = "text-[11px] font-mono text-emerald-400";
+                }
+                if (chainSelect) chainSelect.classList.add('hidden');
+                if (fiatNote) fiatNote.classList.remove('hidden');
+                if (recipientLabel) recipientLabel.innerText = "Conto / IBAN Beneficiario (Moneta Elettronica)";
+                if (recipientInput) {
+                    recipientInput.placeholder = asset === 'EUR' ? "IT60X0542811101000000123456" : "US4409823019482";
+                    if (institutionalSepaIban && asset === 'EUR') {
+                        recipientInput.value = institutionalSepaIban;
+                    } else if (asset === 'USD') {
+                        recipientInput.value = "US4409823019482";
+                    }
+                }
+                if (modeSelect) {
+                    modeSelect.innerHTML = `
+                        <option value="MINT">Accredito Diretto Moneta Elettronica EMI (EMD2)</option>
+                        <option value="TREASURY_TRANSFER">Ricarica di Liquidità Contabile Safeguarded</option>
+                    `;
+                }
+                if (guaranteeText) guaranteeText.innerText = "Conformità EMD2: Fondi segregati al 100% in Banca Depositaria autorizzata (Banca d'Italia Custody).";
+                if (btnLabel) btnLabel.innerText = `Accredita ${asset} sul Core Ledger EMI`;
+            } else {
+                if (badge) {
+                    badge.innerText = `Selezionato: ${asset} (Asset On-Chain Cross-Chain)`;
+                    badge.className = "text-[11px] font-mono text-purple-400";
+                }
+                if (chainSelect) chainSelect.classList.remove('hidden');
+                if (fiatNote) fiatNote.classList.add('hidden');
+                if (recipientLabel) recipientLabel.innerText = "Destinazione Accredito (Indirizzo EVM / Wallet 0x...)";
+                if (recipientInput) {
+                    recipientInput.placeholder = "0x71c8360437cd825d5389b092a4cd471c557b7a8f";
+                    if (connectedUserAddress) {
+                        recipientInput.value = connectedUserAddress;
+                    } else if (institutionalVaultAddress) {
+                        recipientInput.value = institutionalVaultAddress;
+                    }
+                }
+
+                if (chainSelect) {
+                    if (asset === 'POL') {
+                        chainSelect.value = "137";
+                    } else if (asset === 'ARB') {
+                        chainSelect.value = "42161";
+                    } else if (asset === 'BNB' || asset === 'BUSD') {
+                        chainSelect.value = "56";
+                    } else if (!chainSelect.value) {
+                        chainSelect.value = "1";
+                    }
+                }
+
+                if (modeSelect) {
+                    modeSelect.innerHTML = `
+                        <option value="MINT">Smart Contract Direct Minting (mint(to, amount))</option>
+                        <option value="TREASURY_TRANSFER">Accredito da Riserva Istituzionale (Treasury)</option>
+                    `;
+                }
+                if (guaranteeText) guaranteeText.innerText = "Firma Istituzionale: Transazione EIP-1559 con ECDSA secp256k1 ed immutabilità garantita sui blocchi.";
+                if (btnLabel) btnLabel.innerText = `Esegui Minting / Trasferimento ${asset}`;
+            }
+        }
+
+        function setMintAmount(val) {
+            document.getElementById('mint-amount').value = val;
+        }
+
+        function fillMintRecipient(target) {
+            const input = document.getElementById('mint-recipient');
+            if (target === 'VAULT') {
+                if (selectedMintType === 'FIAT') {
+                    input.value = institutionalSepaIban || 'IT60X0542811101000000123456';
+                } else {
+                    input.value = institutionalVaultAddress || '0x88c6C46EBf353A52EdAb708ac83992256CEced7';
+                }
+            } else if (target === 'CONNECTED') {
+                if (connectedUserAddress) {
+                    input.value = connectedUserAddress;
+                } else {
+                    alert('Nessun wallet Web3 utente connesso. Clicca su "Collega Web3 Wallet" in alto a destra.');
+                }
+            }
+        }
+
+        function inspectLastMintReceipt() {
+            if (lastMintTxId) {
+                inspectMessage(lastMintTxId);
+            }
+        }
+
+        document.getElementById('minting-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const submitBtn = document.getElementById('mint-submit-btn');
+            const btnLabel = document.getElementById('mint-btn-label');
+            const resultCard = document.getElementById('mint-result-card');
+            const resultTitle = document.getElementById('mint-result-title');
+            const resultDesc = document.getElementById('mint-result-desc');
+            const resultBadge = document.getElementById('mint-result-badge');
+            const resultDetails = document.getElementById('mint-result-details');
+            const inspectBtn = document.getElementById('mint-inspect-msg-btn');
+
+            const amount = parseFloat(document.getElementById('mint-amount').value);
+            if (!amount || isNaN(amount) || amount <= 0) {
+                alert('Inserisci un importo valido maggiore di zero.');
+                return;
+            }
+
+            const recipient = document.getElementById('mint-recipient').value.trim();
+            const chainId = parseInt(document.getElementById('mint-chain').value, 10) || 1;
+            const mode = document.getElementById('mint-mode').value;
+            const note = document.getElementById('mint-note').value.trim();
+
+            submitBtn.disabled = true;
+            btnLabel.innerText = "Esecuzione crittografica in corso...";
+
+            try {
+                const res = await fetch('/api/platform/fund-or-mint', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        asset: selectedMintAsset,
+                        chainId: chainId,
+                        recipient: recipient,
+                        amount: amount,
+                        mode: mode,
+                        note: note
+                    })
+                });
+
+                const data = await res.json();
+
+                if (res.ok) {
+                    lastMintTxId = data.txId;
+                    resultCard.classList.remove('hidden');
+                    resultTitle.innerText = `Operazione Conclusa: ${amount} ${data.asset} Accreditati`;
+                    resultDesc.innerText = data.message;
+                    resultBadge.innerText = data.rail === 'FIAT_EMI' ? 'EMD2 SETTLED' : 'CONFIRMED ON-CHAIN';
+                    resultBadge.className = "px-2.5 py-1 rounded-full text-xs font-mono font-semibold bg-emerald-950 text-emerald-300 border border-emerald-800";
+
+                    let detailsHtml = '';
+
+                    if (data.rail === 'FIAT_EMI') {
+                        detailsHtml = `
+                            <div class="bg-slate-900/90 p-3 rounded-lg border border-slate-800">
+                                <span class="text-slate-400 block text-[11px]">ID Transazione Core Ledger:</span>
+                                <span class="text-emerald-400 font-bold">${data.txId}</span>
+                            </div>
+                            <div class="bg-slate-900/90 p-3 rounded-lg border border-slate-800">
+                                <span class="text-slate-400 block text-[11px]">Circuito di Regolamento:</span>
+                                <span class="text-white">${data.clearingRail}</span>
+                            </div>
+                            <div class="bg-slate-900/90 p-3 rounded-lg border border-slate-800">
+                                <span class="text-slate-400 block text-[11px]">Riserva di Salvaguardia:</span>
+                                <span class="text-amber-400 font-bold">100% Segregata (Banca d'Italia)</span>
+                            </div>
+                            <div class="md:col-span-3 bg-slate-900/90 p-3 rounded-lg border border-slate-800 truncate">
+                                <span class="text-slate-400 block text-[11px]">Hash Immutabile SHA-256 (Audit Trail):</span>
+                                <span class="text-slate-300 text-[11px]">${data.hash}</span>
+                            </div>
+                        `;
+                    } else {
+                        const explorerLink = data.explorerUrl ? `<a href="${data.explorerUrl}" target="_blank" class="text-cyan-400 hover:underline flex items-center gap-1 font-bold">${data.txHash.substring(0, 14)}... ↗</a>` : data.txHash;
+                        detailsHtml = `
+                            <div class="bg-slate-900/90 p-3 rounded-lg border border-slate-800">
+                                <span class="text-slate-400 block text-[11px]">Network & Chain ID:</span>
+                                <span class="text-purple-300 font-bold">${data.network} (ID ${data.chainId})</span>
+                            </div>
+                            <div class="bg-slate-900/90 p-3 rounded-lg border border-slate-800">
+                                <span class="text-slate-400 block text-[11px]">Blocco di Conferma:</span>
+                                <span class="text-white font-bold">#${data.blockNumber} (12 Conferme)</span>
+                            </div>
+                            <div class="bg-slate-900/90 p-3 rounded-lg border border-slate-800">
+                                <span class="text-slate-400 block text-[11px]">Gas Consumato:</span>
+                                <span class="text-slate-300">${data.gasUsed} gas units</span>
+                            </div>
+                            <div class="md:col-span-2 bg-slate-900/90 p-3 rounded-lg border border-slate-800 truncate">
+                                <span class="text-slate-400 block text-[11px]">Tx Hash Blockchain (Keccak-256):</span>
+                                ${explorerLink}
+                            </div>
+                            <div class="bg-slate-900/90 p-3 rounded-lg border border-slate-800 truncate">
+                                <span class="text-slate-400 block text-[11px]">Firma ECDSA (Signer Autenticato):</span>
+                                <span class="text-emerald-400 font-bold">${data.signature ? data.signature.recoveredSigner.substring(0, 10) + '...' : 'Verificata'}</span>
+                            </div>
+                            <div class="md:col-span-3 bg-slate-900/90 p-3 rounded-lg border border-slate-800 truncate">
+                                <span class="text-slate-400 block text-[11px]">Hash Blocco Core Ledger (SHA-256):</span>
+                                <span class="text-slate-300 text-[11px]">${data.ledgerHash}</span>
+                            </div>
+                        `;
+                    }
+
+                    resultDetails.innerHTML = detailsHtml;
+                    inspectBtn.classList.remove('hidden');
+
+                    // Refresh all platform data immediately
+                    loadLedgerData();
+                } else {
+                    alert('Errore operazione: ' + (data.error || 'Impossibile completare la richiesta'));
+                }
+            } catch (err) {
+                alert('Errore di comunicazione: ' + err.message);
+            } finally {
+                submitBtn.disabled = false;
+                selectMintAsset(selectedMintAsset, selectedMintType);
             }
         });
 

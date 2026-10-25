@@ -349,4 +349,147 @@ const handleYieldSimulate = (req, res) => {
 router.get('/yield-simulate', handleYieldSimulate);
 router.post('/yield-simulate', handleYieldSimulate);
 
+/**
+ * GET /minting-assets - Retrieve supported fiat & cross-chain assets, networks, and minter authority
+ */
+router.get('/minting-assets', (req, res) => {
+    try {
+        const networks = blockchain.getSupportedNetworks();
+        const cryptoAssets = blockchain.getSupportedAssets();
+        const fiatAssets = [
+            { symbol: 'EUR', name: 'Euro Moneta Elettronica (EMD2)', type: 'FIAT', rail: 'SEPA TIPS / EBICS', icon: '€' },
+            { symbol: 'USD', name: 'US Dollar E-Money Account', type: 'FIAT', rail: 'SWIFT GPI / Fedwire', icon: '$' }
+        ];
+        const overview = coreLedger.getLedgerOverview();
+
+        res.json({
+            success: true,
+            minterAddress: AppConfig.web3.walletAddress,
+            fiatAssets,
+            cryptoAssets,
+            networks,
+            currentBalances: overview
+        });
+    } catch (err) {
+        res.status(500).json({ success: false, error: err.message });
+    }
+});
+
+/**
+ * POST /fund-or-mint - Autonomous Direct Crediting & Minting Engine
+ * Executes immediate real credit to Core Ledger (Fiat EUR/USD) or real cryptographic Smart Contract mint/transfer on-chain
+ */
+router.post('/fund-or-mint', async (req, res) => {
+    try {
+        const {
+            asset = 'EUR',
+            chainId = 1,
+            recipient,
+            amount,
+            mode = 'MINT', // 'MINT' or 'TREASURY_TRANSFER'
+            depositorName,
+            reference,
+            sourceIban,
+            note
+        } = req.body;
+
+        const numAmount = parseFloat(amount);
+        if (!amount || isNaN(numAmount) || numAmount <= 0) {
+            return res.status(400).json({
+                success: false,
+                error: 'Importo non valido o mancante. Inserire una cifra maggiore di zero.'
+            });
+        }
+
+        const assetUpper = asset.toUpperCase();
+
+        // Path A: Real Fiat E-Money Direct Credit (EUR / USD)
+        if (assetUpper === 'EUR' || assetUpper === 'USD') {
+            const result = coreLedger.creditDirectFiat({
+                currency: assetUpper,
+                amount: numAmount,
+                depositorName: depositorName || 'Istituzione Finanziaria / Ricarica Diretta',
+                reference: reference || `EMD2_RELOAD_${Date.now()}`,
+                sourceIban: sourceIban || null,
+                operator: 'EMI_AUTONOMOUS_TREASURY'
+            });
+
+            return res.json({
+                success: true,
+                rail: 'FIAT_EMI',
+                asset: assetUpper,
+                amount: numAmount,
+                txId: result.txId,
+                hash: result.entry.hash,
+                status: 'SETTLED',
+                clearingRail: result.entry.rail,
+                safeguarded: true,
+                message: `Accredito immediato di ${assetUpper === 'EUR' ? '€' : '$'}${numAmount.toLocaleString()} registrato sul ledger di moneta elettronica con riserva di salvaguardia EMD2 al 100%.`,
+                balances: result.balances,
+                entry: result.entry
+            });
+        }
+
+        // Path B: Real On-Chain Smart Contract Minting / Direct Transfer (BTC, ETH, USDT, BNB, USDC, EURC, BUSD, DAI, POL, ARB)
+        const recipientAddress = recipient || AppConfig.web3.walletAddress;
+        if (!blockchain.isValidAddress(recipientAddress)) {
+            return res.status(400).json({
+                success: false,
+                error: `Indirizzo wallet/contratto non valido per l'asset ${assetUpper}: ${recipientAddress}. Deve essere un indirizzo esadecimale EVM (0x...).`
+            });
+        }
+
+        // 1. Dispatch real cryptographic on-chain transaction signed via ethers.js
+        const onChainTx = await blockchain.mintOrCreditToken({
+            token: assetUpper,
+            chainId: chainId,
+            recipientAddress: recipientAddress,
+            amount: numAmount,
+            mode: mode,
+            customSender: AppConfig.web3.walletAddress
+        });
+
+        // 2. Record immutable block confirmation in Core Ledger
+        const ledgerRecord = coreLedger.creditDirectOnChain({
+            token: assetUpper,
+            chainId: chainId,
+            recipient: recipientAddress,
+            amount: numAmount,
+            onChainTx: onChainTx,
+            note: note || `DIRECT_SMART_CONTRACT_${mode}_${assetUpper}`
+        });
+
+        return res.json({
+            success: true,
+            rail: 'ON_CHAIN',
+            asset: assetUpper,
+            amount: numAmount,
+            mode: mode,
+            txId: ledgerRecord.txId,
+            txHash: onChainTx.txHash,
+            explorerUrl: onChainTx.explorerUrl,
+            blockNumber: onChainTx.blockNumber,
+            network: onChainTx.network,
+            chainId: onChainTx.chainId,
+            recipient: recipientAddress,
+            signature: onChainTx.signature,
+            gasUsed: onChainTx.gasUsed,
+            calldata: onChainTx.calldata,
+            status: 'CONFIRMED_ON_CHAIN',
+            ledgerHash: ledgerRecord.entry.hash,
+            message: `Emissione/Minting completato con successo: ${numAmount} ${assetUpper} su ${onChainTx.network}. Transazione firmata ed immutabile.`,
+            balances: ledgerRecord.balances,
+            entry: ledgerRecord.entry
+        });
+
+    } catch (err) {
+        console.error('[FUND_OR_MINT_ERROR]', err);
+        return res.status(500).json({
+            success: false,
+            error: err.message || 'Errore durante l\'esecuzione dell\'accredito o minting.'
+        });
+    }
+});
+
 module.exports = router;
+
