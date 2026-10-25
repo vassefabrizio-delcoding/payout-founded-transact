@@ -5,6 +5,7 @@ const compliance = require('../services/ComplianceAML');
 const paymentRails = require('../services/PaymentRails');
 const blockchain = require('../services/BlockchainService');
 const oracle = require('../services/OracleService');
+const yieldStrategy = require('../services/YieldStrategyService');
 const AppConfig = require('../config/AppConfig');
 
 /**
@@ -307,5 +308,45 @@ router.post('/aml-screen', (req, res) => {
     });
     res.json(result);
 });
+
+/**
+ * GET /yield-benchmarks - Retrieve benchmark yields and scenario rates for safeguarding vs on-chain staking
+ */
+router.get('/yield-benchmarks', (req, res) => {
+    try {
+        const benchmarks = yieldStrategy.getBenchmarks();
+        res.json({
+            success: true,
+            data: benchmarks
+        });
+    } catch (err) {
+        res.status(500).json({ success: false, error: err.message });
+    }
+});
+
+/**
+ * GET /yield-simulate & POST /yield-simulate - Calculate ROI and trajectory projection points
+ */
+const handleYieldSimulate = (req, res) => {
+    try {
+        const params = req.method === 'POST' ? req.body : req.query;
+        const result = yieldStrategy.simulateYield({
+            principal: params.principal,
+            safeguardingShare: params.safeguardingShare,
+            horizonMonths: params.horizonMonths,
+            scenario: params.scenario,
+            compounding: params.compounding
+        });
+        res.json({
+            success: true,
+            data: result
+        });
+    } catch (err) {
+        res.status(400).json({ success: false, error: err.message });
+    }
+};
+
+router.get('/yield-simulate', handleYieldSimulate);
+router.post('/yield-simulate', handleYieldSimulate);
 
 module.exports = router;

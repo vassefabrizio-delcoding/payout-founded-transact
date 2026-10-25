@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>EMI Gateway - Payout Fiat & On-Chain Autonomo</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/d3@7"></script>
     <style>
         .rail-btn.active {
             background-color: #059669;
@@ -53,6 +54,10 @@
             </a>
             <a href="#oracle-section" class="px-3 py-1.5 rounded-lg bg-slate-800/80 hover:bg-slate-700 text-slate-300 hover:text-white transition flex items-center gap-1.5">
                 <span>📈</span> Oracolo & Controvalore
+            </a>
+            <a href="#yield-section" class="px-3 py-1.5 rounded-lg bg-indigo-950/80 hover:bg-indigo-900 text-indigo-300 border border-indigo-800/60 transition flex items-center gap-1.5 shadow-sm">
+                <span>📊</span> Strategia Rendimento D3
+                <span class="w-1.5 h-1.5 rounded-full bg-amber-400"></span>
             </a>
             <a href="#kyc-section" class="px-3 py-1.5 rounded-lg bg-blue-950/80 hover:bg-blue-900 text-blue-300 border border-blue-800/60 transition flex items-center gap-1.5">
                 <span>🛡️</span> Conformità KYC (Tier 1-3)
@@ -323,6 +328,216 @@
                         <div class="text-[11px] text-slate-500" id="convert-source-label">Fonte: Chainlink DON + BCE Fix</div>
                     </div>
                 </div>
+            </div>
+        </div>
+
+        <!-- Yield Strategy Module (D3.js ROI Visualization & Strategy Allocation Engine) -->
+        <div id="yield-section" class="bg-slate-900 border border-slate-800 p-6 md:p-8 rounded-2xl shadow-xl space-y-6">
+            <!-- Header with title & badges -->
+            <div class="flex flex-col md:flex-row justify-between items-start md:items-center pb-4 border-b border-slate-800 gap-4">
+                <div>
+                    <div class="flex items-center gap-3">
+                        <h2 class="text-xl font-bold text-white flex items-center gap-2">
+                            <span>📊</span> Strategia di Rendimento & ROI (D3.js Treasury Analytics)
+                        </h2>
+                        <span class="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-indigo-500/10 text-indigo-400 border border-indigo-500/20 font-mono">
+                            EMD2 SAFEGUARDING vs STAKING
+                        </span>
+                    </div>
+                    <p class="text-sm text-slate-400 mt-1">
+                        Visualizzazione analitica D3.js del ROI a confronto: rendimento fruttifero in conti di salvaguardia segregati (BCE / Titoli di Stato AAA) rispetto allo staking di stablecoin on-chain (EURC/USDC DeFi Prime).
+                    </p>
+                </div>
+                <div class="flex items-center gap-2">
+                    <button onclick="runYieldSimulation()" class="px-3.5 py-2 bg-slate-800 hover:bg-slate-700 border border-slate-700 hover:border-indigo-500 text-slate-200 text-xs rounded-lg transition font-mono flex items-center gap-1.5 shadow-sm">
+                        <span>↻</span> Ricalcola Curva D3
+                    </button>
+                </div>
+            </div>
+
+            <!-- Strategy Parameters Controls -->
+            <div class="grid grid-cols-1 lg:grid-cols-12 gap-5 p-5 bg-slate-950/70 border border-slate-800 rounded-xl">
+                <!-- Principal Input -->
+                <div class="lg:col-span-4 space-y-2">
+                    <div class="flex justify-between items-center">
+                        <label class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Capitale da Allocare (&euro;)</label>
+                        <button type="button" onclick="useCurrentBalanceForYield()" class="text-[11px] text-emerald-400 hover:underline font-mono">Usa Saldo EUR</button>
+                    </div>
+                    <div class="relative">
+                        <span class="absolute left-3 top-2.5 text-slate-500 font-mono text-sm">&euro;</span>
+                        <input type="number" id="yield-principal" value="500000" min="5000" step="10000" oninput="debounceYieldSim()" class="w-full bg-slate-900 border border-slate-700 rounded-lg py-2.5 pl-8 pr-3 text-white font-mono text-sm focus:border-indigo-500 outline-none">
+                    </div>
+                    <!-- Quick Chips -->
+                    <div class="flex flex-wrap gap-1.5 pt-1">
+                        <button type="button" onclick="setYieldPrincipal(100000)" class="px-2 py-0.5 bg-slate-800 hover:bg-slate-700 text-[10px] rounded text-slate-300 font-mono">100k</button>
+                        <button type="button" onclick="setYieldPrincipal(500000)" class="px-2 py-0.5 bg-slate-800 hover:bg-slate-700 text-[10px] rounded text-slate-300 font-mono">500k</button>
+                        <button type="button" onclick="setYieldPrincipal(1000000)" class="px-2 py-0.5 bg-slate-800 hover:bg-slate-700 text-[10px] rounded text-slate-300 font-mono">1M</button>
+                        <button type="button" onclick="setYieldPrincipal(2500000)" class="px-2 py-0.5 bg-slate-800 hover:bg-slate-700 text-[10px] rounded text-slate-300 font-mono">2.5M</button>
+                    </div>
+                </div>
+
+                <!-- Allocation Split Slider -->
+                <div class="lg:col-span-5 space-y-2">
+                    <div class="flex justify-between items-center text-xs">
+                        <span class="font-semibold text-emerald-400 flex items-center gap-1">
+                            <span class="w-2 h-2 rounded-full bg-emerald-400"></span> Salvaguardia Bancaria: <strong id="safe-share-label">70%</strong>
+                        </span>
+                        <span class="font-semibold text-purple-400 flex items-center gap-1">
+                            <span class="w-2 h-2 rounded-full bg-purple-400"></span> Staking Web3: <strong id="staked-share-label">30%</strong>
+                        </span>
+                    </div>
+                    <input type="range" id="yield-split-slider" min="0" max="100" value="70" step="5" oninput="updateYieldSplit(this.value)" class="w-full accent-indigo-500 cursor-pointer">
+                    <div class="flex justify-between text-[10px] font-mono text-slate-500">
+                        <span>0% Safe / 100% Web3</span>
+                        <span>50% / 50%</span>
+                        <span>100% Safe (Risk-Free)</span>
+                    </div>
+                    <div class="flex flex-wrap gap-1.5 pt-0.5">
+                        <button type="button" onclick="setYieldPreset(100)" class="px-2 py-0.5 bg-slate-800 hover:bg-slate-700 text-[10px] rounded text-emerald-300 font-mono">100% Salvaguardia</button>
+                        <button type="button" onclick="setYieldPreset(70)" class="px-2 py-0.5 bg-indigo-950 hover:bg-indigo-900 border border-indigo-800 text-[10px] rounded text-indigo-300 font-mono font-bold">70/30 (Consigliato EMI)</button>
+                        <button type="button" onclick="setYieldPreset(50)" class="px-2 py-0.5 bg-slate-800 hover:bg-slate-700 text-[10px] rounded text-amber-300 font-mono">50/50 (Bilanciato)</button>
+                        <button type="button" onclick="setYieldPreset(0)" class="px-2 py-0.5 bg-slate-800 hover:bg-slate-700 text-[10px] rounded text-purple-300 font-mono">100% Staking On-Chain</button>
+                    </div>
+                </div>
+
+                <!-- Horizon & Macro Scenario -->
+                <div class="lg:col-span-3 space-y-3">
+                    <div>
+                        <label class="block text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-1">Orizzonte Temporale</label>
+                        <div class="grid grid-cols-4 gap-1">
+                            <button type="button" onclick="setYieldHorizon(6)" class="yield-horizon-btn px-2 py-1 text-xs rounded bg-slate-800 text-slate-300 hover:text-white font-mono" data-months="6">6M</button>
+                            <button type="button" onclick="setYieldHorizon(12)" class="yield-horizon-btn px-2 py-1 text-xs rounded bg-indigo-600 text-white font-mono font-bold" data-months="12">1A</button>
+                            <button type="button" onclick="setYieldHorizon(36)" class="yield-horizon-btn px-2 py-1 text-xs rounded bg-slate-800 text-slate-300 hover:text-white font-mono" data-months="36">3A</button>
+                            <button type="button" onclick="setYieldHorizon(60)" class="yield-horizon-btn px-2 py-1 text-xs rounded bg-slate-800 text-slate-300 hover:text-white font-mono" data-months="60">5A</button>
+                        </div>
+                    </div>
+                    <div>
+                        <label class="block text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-1">Scenario Tassi</label>
+                        <select id="yield-scenario-select" onchange="debounceYieldSim()" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2 text-white text-xs focus:border-indigo-500 outline-none">
+                            <option value="baseline" selected>Scenario Baseline (BCE 3.35% / DeFi 6.13%)</option>
+                            <option value="conservative">Conservativo (BCE 2.60% / DeFi 4.40%)</option>
+                            <option value="expansion">Espansivo (BCE 3.80% / DeFi 8.65%)</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Summary ROI Metric KPI Cards -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                <!-- Card 1: Projected Total Yield -->
+                <div class="bg-slate-950 p-4 rounded-xl border border-slate-800">
+                    <span class="text-[11px] font-semibold uppercase tracking-wider text-slate-400">Rendimento Totale Ibrido</span>
+                    <div class="text-2xl font-mono font-bold text-amber-400 mt-1" id="roi-earned-total">&euro; 0,00</div>
+                    <div class="text-xs font-mono text-emerald-400 mt-1" id="roi-pct-total">+0.00% ROI</div>
+                    <div class="text-[10px] text-slate-500 mt-1">Capitale finale: <span id="roi-final-balance" class="text-slate-300 font-mono">&euro; 0,00</span></div>
+                </div>
+
+                <!-- Card 2: Blended APY -->
+                <div class="bg-slate-950 p-4 rounded-xl border border-slate-800">
+                    <span class="text-[11px] font-semibold uppercase tracking-wider text-slate-400">APY Medio Ponderato Netto</span>
+                    <div class="text-2xl font-mono font-bold text-indigo-400 mt-1" id="roi-blended-apy">0.00%</div>
+                    <div class="text-xs text-slate-400 mt-1 flex justify-between font-mono">
+                        <span>Safe: <span class="text-emerald-400" id="roi-safe-net">3.25%</span></span>
+                        <span>Staked: <span class="text-purple-400" id="roi-staked-net">5.98%</span></span>
+                    </div>
+                    <div class="text-[10px] text-slate-500 mt-1">Compounding mensile al netto commissioni</div>
+                </div>
+
+                <!-- Card 3: Alpha vs Safe Only -->
+                <div class="bg-slate-950 p-4 rounded-xl border border-slate-800">
+                    <span class="text-[11px] font-semibold uppercase tracking-wider text-slate-400">Extra Guadagno vs Solo Safe</span>
+                    <div class="text-2xl font-mono font-bold text-emerald-400 mt-1" id="roi-alpha-extra">+&euro; 0,00</div>
+                    <div class="text-xs text-slate-400 mt-1 font-mono">
+                        Solo Salvaguardia: <span class="text-slate-300" id="roi-safe-only-yield">&euro; 0,00</span>
+                    </div>
+                    <div class="text-[10px] text-emerald-500 mt-1">Incremento di tesoreria da quota Web3</div>
+                </div>
+
+                <!-- Card 4: Risk Profile & EMD2 Compliance -->
+                <div class="bg-slate-950 p-4 rounded-xl border border-slate-800">
+                    <span class="text-[11px] font-semibold uppercase tracking-wider text-slate-400">Profilo Rischio & EMD2</span>
+                    <div class="text-sm font-bold text-white mt-1 flex items-center gap-2" id="roi-risk-badge">
+                        <span class="w-2 h-2 rounded-full bg-emerald-400" id="roi-risk-dot"></span>
+                        <span id="roi-risk-score">2.5 / 10 - Moderato</span>
+                    </div>
+                    <div class="text-[11px] text-slate-400 mt-1 font-mono truncate" id="roi-compliance-status">CONFORME EMD2 100%</div>
+                    <div class="text-[10px] text-slate-500 mt-1" id="roi-liquidity-buffer">70% T+0 / 30% T+1</div>
+                </div>
+            </div>
+
+            <!-- D3.js Chart Area -->
+            <div class="bg-slate-950 p-5 rounded-xl border border-slate-800 space-y-3 relative">
+                <div class="flex flex-col sm:flex-row justify-between sm:items-center gap-2">
+                    <div class="flex flex-wrap items-center gap-4 text-xs font-mono">
+                        <div class="flex items-center gap-2">
+                            <span class="w-3.5 h-1 bg-amber-400 rounded-sm"></span>
+                            <span class="text-white font-bold">Strategia Ibrida Ponderata (Allocazione Attiva)</span>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <span class="w-3.5 h-1 bg-emerald-400 rounded-sm border-dashed"></span>
+                            <span class="text-slate-300">100% Salvaguardia Bancaria (BCE / AAA)</span>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <span class="w-3.5 h-1 bg-purple-400 rounded-sm border-dashed"></span>
+                            <span class="text-slate-300">100% Staking On-Chain Stablecoin (DeFi)</span>
+                        </div>
+                    </div>
+                    <div class="text-[11px] text-slate-500 font-mono">
+                        Passa il mouse sul grafico D3 per ispezionare i flussi mensili
+                    </div>
+                </div>
+
+                <!-- SVG Container for D3 -->
+                <div id="yield-d3-container" class="w-full relative min-h-[380px] overflow-hidden">
+                    <!-- Tooltip element -->
+                    <div id="d3-yield-tooltip" class="absolute pointer-events-none opacity-0 bg-slate-900/95 border border-slate-700 rounded-xl p-3 shadow-2xl z-30 font-mono text-xs text-white transition-opacity duration-150 backdrop-blur-md"></div>
+                </div>
+            </div>
+
+            <!-- Comparative Asset Strategy Matrix -->
+            <div class="overflow-x-auto border border-slate-800 rounded-xl">
+                <table class="w-full text-left border-collapse text-xs">
+                    <thead>
+                        <tr class="bg-slate-950 text-slate-400 border-b border-slate-800">
+                            <th class="p-3.5">Caratteristica Strategica</th>
+                            <th class="p-3.5 text-emerald-400">Conto Salvaguardia Bancario (EMD2)</th>
+                            <th class="p-3.5 text-purple-400">Staking On-Chain Stablecoin (Web3)</th>
+                            <th class="p-3.5 text-amber-400 font-bold">Portafoglio Ibrido Ottimizzato</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-800/60 font-mono">
+                        <tr class="hover:bg-slate-800/30">
+                            <td class="p-3.5 text-slate-300">Istituzione / Custodia</td>
+                            <td class="p-3.5 text-slate-200">Banca Depositaria Istituzionale (BCE / BoI)</td>
+                            <td class="p-3.5 text-slate-200">Smart Contract Verificati (Aave Prime / Sky DSR)</td>
+                            <td class="p-3.5 text-amber-300 font-bold">Dual-Rail Gestito con Smart Ledger</td>
+                        </tr>
+                        <tr class="hover:bg-slate-800/30">
+                            <td class="p-3.5 text-slate-300">Rendimento Nominale Lordo</td>
+                            <td class="p-3.5 text-slate-200" id="matrix-safe-gross">3.35% APY</td>
+                            <td class="p-3.5 text-slate-200" id="matrix-staked-gross">6.13% APY</td>
+                            <td class="p-3.5 text-amber-300 font-bold" id="matrix-hybrid-apy">4.34% APY</td>
+                        </tr>
+                        <tr class="hover:bg-slate-800/30">
+                            <td class="p-3.5 text-slate-300">Liquidità & Disponibilità</td>
+                            <td class="p-3.5 text-emerald-400">T+0 (Disponibilità Immediata)</td>
+                            <td class="p-3.5 text-purple-400">T+1 (Unstaking + Transazione On-Chain)</td>
+                            <td class="p-3.5 text-amber-300 font-bold" id="matrix-liquidity-split">70% T+0 istantaneo / 30% T+1</td>
+                        </tr>
+                        <tr class="hover:bg-slate-800/30">
+                            <td class="p-3.5 text-slate-300">Rating di Rischio & Garanzie</td>
+                            <td class="p-3.5 text-emerald-400">AAA • 100% Protezione Capitale (Art. 7 EMD2)</td>
+                            <td class="p-3.5 text-slate-200">A- • Over-collateralized / Rischio Smart Contract</td>
+                            <td class="p-3.5 text-amber-300 font-bold" id="matrix-risk-composite">2.5/10 (Rischio Moderato Controllato)</td>
+                        </tr>
+                        <tr class="hover:bg-slate-800/30">
+                            <td class="p-3.5 text-slate-300">Interesse Netto Maturato a Scadenza</td>
+                            <td class="p-3.5 text-slate-200" id="matrix-safe-yield">&euro; 0,00</td>
+                            <td class="p-3.5 text-slate-200" id="matrix-staked-yield">&euro; 0,00</td>
+                            <td class="p-3.5 text-amber-300 font-bold" id="matrix-hybrid-yield">&euro; 0,00</td>
+                        </tr>
+                    </tbody>
+                </table>
             </div>
         </div>
 
@@ -738,6 +953,13 @@
         let lastConvertedAmount = 0;
         let lastConvertedAsset = 'EUR';
 
+        // Yield Strategy State (D3.js Treasury Analytics)
+        let currentYieldHorizon = 12;
+        let currentYieldSplit = 70;
+        let yieldSimTimeout = null;
+        let currentRawEurBalance = 1250000;
+        let cachedYieldResult = null;
+
         function selectRail(rail) {
             currentRail = rail;
             document.querySelectorAll('.rail-btn').forEach(btn => btn.classList.remove('active', 'bg-emerald-600', 'bg-blue-600', 'bg-purple-600', 'text-white'));
@@ -1130,6 +1352,398 @@
             }
         }
 
+        // ==========================================
+        // YIELD STRATEGY & D3.JS VISUALIZATION ENGINE
+        // ==========================================
+
+        function setYieldHorizon(months) {
+            currentYieldHorizon = parseInt(months, 10);
+            document.querySelectorAll('.yield-horizon-btn').forEach(btn => {
+                const btnM = parseInt(btn.getAttribute('data-months'), 10);
+                if (btnM === currentYieldHorizon) {
+                    btn.className = "yield-horizon-btn px-2 py-1 text-xs rounded bg-indigo-600 text-white font-mono font-bold shadow-sm";
+                } else {
+                    btn.className = "yield-horizon-btn px-2 py-1 text-xs rounded bg-slate-800 text-slate-300 hover:text-white font-mono";
+                }
+            });
+            runYieldSimulation();
+        }
+
+        function updateYieldSplit(val) {
+            currentYieldSplit = parseInt(val, 10);
+            document.getElementById('safe-share-label').innerText = `${currentYieldSplit}%`;
+            document.getElementById('staked-share-label').innerText = `${100 - currentYieldSplit}%`;
+            debounceYieldSim();
+        }
+
+        function setYieldPreset(val) {
+            const slider = document.getElementById('yield-split-slider');
+            if (slider) slider.value = val;
+            updateYieldSplit(val);
+        }
+
+        function setYieldPrincipal(amount) {
+            const input = document.getElementById('yield-principal');
+            if (input) input.value = amount;
+            debounceYieldSim();
+        }
+
+        function useCurrentBalanceForYield() {
+            setYieldPrincipal(Math.round(currentRawEurBalance));
+        }
+
+        function debounceYieldSim() {
+            if (yieldSimTimeout) clearTimeout(yieldSimTimeout);
+            yieldSimTimeout = setTimeout(() => {
+                runYieldSimulation();
+            }, 200);
+        }
+
+        function formatEuroCurrency(val) {
+            return Number(val || 0).toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+        }
+
+        async function runYieldSimulation() {
+            const principal = parseFloat(document.getElementById('yield-principal').value) || 500000;
+            const scenario = document.getElementById('yield-scenario-select').value || 'baseline';
+
+            try {
+                const res = await fetch('/api/platform/yield-simulate', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({
+                        principal: principal,
+                        safeguardingShare: currentYieldSplit,
+                        horizonMonths: currentYieldHorizon,
+                        scenario: scenario,
+                        compounding: 'monthly'
+                    })
+                });
+
+                if (!res.ok) throw new Error('Simulazione non riuscita');
+                const json = await res.json();
+                if (!json.success || !json.data) return;
+
+                const data = json.data;
+                cachedYieldResult = data;
+                const { results, rates, riskAndCompliance, trajectory, params } = data;
+
+                // KPI 1: Total Yield Earned
+                document.getElementById('roi-earned-total').innerHTML = `&euro; ${formatEuroCurrency(results.totalNetYieldEarned)}`;
+                document.getElementById('roi-pct-total').innerText = `+${results.hybridRoiPercent}% ROI Totale`;
+                document.getElementById('roi-final-balance').innerHTML = `&euro; ${formatEuroCurrency(results.finalHybridBalance)}`;
+
+                // KPI 2: Blended APY
+                document.getElementById('roi-blended-apy').innerText = `${rates.blendedEffectiveApy}%`;
+                document.getElementById('roi-safe-net').innerText = `${rates.safeguardingNet}%`;
+                document.getElementById('roi-staked-net').innerText = `${rates.stakedNet}%`;
+
+                // KPI 3: Alpha vs Safe
+                const deltaPrefix = results.extraEarningsVsSafeOnly >= 0 ? '+' : '';
+                document.getElementById('roi-alpha-extra').innerHTML = `${deltaPrefix}&euro; ${formatEuroCurrency(results.extraEarningsVsSafeOnly)}`;
+                document.getElementById('roi-safe-only-yield').innerHTML = `&euro; ${formatEuroCurrency(results.safeguardingYieldEarned)}`;
+
+                // KPI 4: Risk Profile & EMD2 Compliance
+                document.getElementById('roi-risk-score').innerText = `${riskAndCompliance.riskScore} / 10 - ${riskAndCompliance.riskLabel}`;
+                document.getElementById('roi-compliance-status').innerText = riskAndCompliance.emd2Message;
+                document.getElementById('roi-liquidity-buffer').innerText = `${riskAndCompliance.liquidityBufferT0} / ${riskAndCompliance.liquidityBufferT1}`;
+
+                const riskDot = document.getElementById('roi-risk-dot');
+                if (riskDot) {
+                    if (riskAndCompliance.riskScore <= 2.2) {
+                        riskDot.className = "w-2 h-2 rounded-full bg-emerald-400";
+                    } else if (riskAndCompliance.riskScore <= 3.6) {
+                        riskDot.className = "w-2 h-2 rounded-full bg-amber-400";
+                    } else {
+                        riskDot.className = "w-2 h-2 rounded-full bg-purple-400";
+                    }
+                }
+
+                // Comparative Table Matrix
+                document.getElementById('matrix-safe-gross').innerText = `${rates.safeguardingGross}% APY`;
+                document.getElementById('matrix-staked-gross').innerText = `${rates.stakedGross}% APY`;
+                document.getElementById('matrix-hybrid-apy').innerText = `${rates.blendedEffectiveApy}% APY`;
+                document.getElementById('matrix-liquidity-split').innerText = `${riskAndCompliance.liquidityBufferT0} / ${riskAndCompliance.liquidityBufferT1}`;
+                document.getElementById('matrix-risk-composite').innerText = `${riskAndCompliance.riskScore}/10 (${riskAndCompliance.riskLabel})`;
+
+                document.getElementById('matrix-safe-yield').innerHTML = `&euro; ${formatEuroCurrency(results.safeguardingYieldEarned)}`;
+                document.getElementById('matrix-staked-yield').innerHTML = `&euro; ${formatEuroCurrency(results.stakedYieldEarned)}`;
+                document.getElementById('matrix-hybrid-yield').innerHTML = `&euro; ${formatEuroCurrency(results.totalNetYieldEarned)}`;
+
+                // Render D3 Chart
+                renderD3YieldChart(trajectory, params);
+
+            } catch (err) {
+                console.warn('Yield simulation error:', err);
+            }
+        }
+
+        function renderD3YieldChart(trajectory, params) {
+            if (!window.d3 || !trajectory || trajectory.length === 0) return;
+
+            const container = document.getElementById('yield-d3-container');
+            if (!container) return;
+
+            // Remove existing SVG
+            d3.select('#yield-d3-container').select('svg').remove();
+
+            const containerWidth = container.clientWidth || 800;
+            const margin = { top: 25, right: 35, bottom: 45, left: 80 };
+            const width = Math.max(300, containerWidth) - margin.left - margin.right;
+            const height = 360 - margin.top - margin.bottom;
+
+            const svg = d3.select('#yield-d3-container')
+                .append('svg')
+                .attr('id', 'yield-svg')
+                .attr('width', '100%')
+                .attr('height', 360)
+                .attr('viewBox', `0 0 ${width + margin.left + margin.right} ${height + margin.top + margin.bottom}`)
+                .attr('class', 'overflow-visible')
+                .append('g')
+                .attr('transform', `translate(${margin.left},${margin.top})`);
+
+            // Defs for Gradients
+            const defs = svg.append('defs');
+
+            // Gradient Hybrid (Amber)
+            const gradHybrid = defs.append('linearGradient')
+                .attr('id', 'grad-hybrid')
+                .attr('x1', '0%').attr('y1', '0%')
+                .attr('x2', '0%').attr('y2', '100%');
+            gradHybrid.append('stop').attr('offset', '0%').attr('stop-color', '#f59e0b').attr('stop-opacity', 0.35);
+            gradHybrid.append('stop').attr('offset', '100%').attr('stop-color', '#f59e0b').attr('stop-opacity', 0.01);
+
+            // Scales
+            const xScale = d3.scaleLinear()
+                .domain([0, trajectory.length - 1])
+                .range([0, width]);
+
+            const allVals = trajectory.flatMap(d => [d.safeguardingBalance, d.stakedBalance, d.hybridBalance]);
+            const minY = d3.min(allVals) * 0.996;
+            const maxY = d3.max(allVals) * 1.008;
+
+            const yScale = d3.scaleLinear()
+                .domain([minY, maxY])
+                .range([height, 0])
+                .nice();
+
+            // Horizontal Grid Lines
+            svg.append('g')
+                .attr('class', 'grid')
+                .call(d3.axisLeft(yScale)
+                    .tickSize(-width)
+                    .tickFormat('')
+                )
+                .selectAll('line')
+                .style('stroke', '#334155')
+                .style('stroke-opacity', 0.5)
+                .style('stroke-dasharray', '3,3');
+
+            svg.select('.grid .domain').remove();
+
+            // Hybrid Area fill
+            const areaHybrid = d3.area()
+                .x((d, i) => xScale(i))
+                .y0(height)
+                .y1(d => yScale(d.hybridBalance))
+                .curve(d3.curveMonotoneX);
+
+            svg.append('path')
+                .datum(trajectory)
+                .attr('fill', 'url(#grad-hybrid)')
+                .attr('d', areaHybrid);
+
+            // 1. Safeguarding Line (Emerald Dashed)
+            const lineSafe = d3.line()
+                .x((d, i) => xScale(i))
+                .y(d => yScale(d.safeguardingBalance))
+                .curve(d3.curveMonotoneX);
+
+            svg.append('path')
+                .datum(trajectory)
+                .attr('fill', 'none')
+                .attr('stroke', '#10b981')
+                .attr('stroke-width', 2)
+                .attr('stroke-dasharray', '5,3')
+                .attr('d', lineSafe);
+
+            // 2. Staked Stablecoins Line (Purple Dashed)
+            const lineStaked = d3.line()
+                .x((d, i) => xScale(i))
+                .y(d => yScale(d.stakedBalance))
+                .curve(d3.curveMonotoneX);
+
+            svg.append('path')
+                .datum(trajectory)
+                .attr('fill', 'none')
+                .attr('stroke', '#a855f7')
+                .attr('stroke-width', 2)
+                .attr('stroke-dasharray', '5,3')
+                .attr('d', lineStaked);
+
+            // 3. Hybrid Strategy Line (Amber Solid)
+            const lineHybrid = d3.line()
+                .x((d, i) => xScale(i))
+                .y(d => yScale(d.hybridBalance))
+                .curve(d3.curveMonotoneX);
+
+            svg.append('path')
+                .datum(trajectory)
+                .attr('fill', 'none')
+                .attr('stroke', '#f59e0b')
+                .attr('stroke-width', 3.5)
+                .attr('d', lineHybrid);
+
+            // X Axis
+            const step = Math.max(1, Math.floor(trajectory.length / 8));
+            const tickVals = [];
+            for (let i = 0; i < trajectory.length; i += step) tickVals.push(i);
+            if (tickVals[tickVals.length - 1] !== trajectory.length - 1) tickVals.push(trajectory.length - 1);
+
+            const xAxis = d3.axisBottom(xScale)
+                .tickValues(tickVals)
+                .tickFormat(i => trajectory[i] ? trajectory[i].dateStr : '');
+
+            const gx = svg.append('g')
+                .attr('transform', `translate(0,${height})`)
+                .call(xAxis);
+
+            gx.selectAll('text')
+                .style('fill', '#94a3b8')
+                .style('font-family', 'monospace')
+                .style('font-size', '11px');
+            gx.select('.domain').style('stroke', '#475569');
+
+            // Y Axis
+            const yAxis = d3.axisLeft(yScale)
+                .ticks(5)
+                .tickFormat(d => {
+                    if (d >= 1000000) return '€ ' + (d / 1000000).toFixed(2) + 'M';
+                    return '€ ' + (d / 1000).toFixed(0) + 'k';
+                });
+
+            const gy = svg.append('g').call(yAxis);
+            gy.selectAll('text')
+                .style('fill', '#94a3b8')
+                .style('font-family', 'monospace')
+                .style('font-size', '11px');
+            gy.select('.domain').style('stroke', '#475569');
+
+            // Interactive Elements
+            const crosshair = svg.append('line')
+                .attr('y1', 0)
+                .attr('y2', height)
+                .style('stroke', '#64748b')
+                .style('stroke-width', 1.5)
+                .style('stroke-dasharray', '4,4')
+                .style('opacity', 0);
+
+            const dotSafe = svg.append('circle')
+                .attr('r', 4.5)
+                .attr('fill', '#10b981')
+                .style('opacity', 0);
+
+            const dotStaked = svg.append('circle')
+                .attr('r', 4.5)
+                .attr('fill', '#a855f7')
+                .style('opacity', 0);
+
+            const dotHybrid = svg.append('circle')
+                .attr('r', 6)
+                .attr('fill', '#f59e0b')
+                .attr('stroke', '#ffffff')
+                .attr('stroke-width', 2)
+                .style('opacity', 0);
+
+            const tooltip = d3.select('#d3-yield-tooltip');
+
+            // Transparent overlay for mouse events
+            svg.append('rect')
+                .attr('width', width)
+                .attr('height', height)
+                .attr('fill', 'transparent')
+                .style('cursor', 'crosshair')
+                .on('pointermove', function (event) {
+                    const [mx] = d3.pointer(event);
+                    const rawIdx = Math.round(xScale.invert(mx));
+                    const idx = Math.max(0, Math.min(trajectory.length - 1, rawIdx));
+                    const d = trajectory[idx];
+                    if (!d) return;
+
+                    const cx = xScale(idx);
+                    const cyHybrid = yScale(d.hybridBalance);
+                    const cySafe = yScale(d.safeguardingBalance);
+                    const cyStaked = yScale(d.stakedBalance);
+
+                    crosshair.attr('x1', cx).attr('x2', cx).style('opacity', 0.9);
+                    dotSafe.attr('cx', cx).attr('cy', cySafe).style('opacity', 1);
+                    dotStaked.attr('cx', cx).attr('cy', cyStaked).style('opacity', 1);
+                    dotHybrid.attr('cx', cx).attr('cy', cyHybrid).style('opacity', 1);
+
+                    tooltip.html(`
+                        <div class="border-b border-slate-700/80 pb-1.5 mb-2 flex justify-between items-center gap-4">
+                            <span class="text-white font-bold">Mese ${d.month} • ${d.dateStr}</span>
+                            <span class="text-slate-400 text-[10px]">${d.fullDate}</span>
+                        </div>
+                        <div class="space-y-1.5 text-xs">
+                            <div class="flex justify-between items-center gap-4">
+                                <span class="text-amber-400 font-bold flex items-center gap-1.5">
+                                    <span class="w-2 h-2 rounded-full bg-amber-400"></span> Ibrida (${params.safeguardingShare}/${params.stakedShare}%):
+                                </span>
+                                <strong class="text-white font-mono">€ ${formatEuroCurrency(d.hybridBalance)}</strong>
+                            </div>
+                            <div class="text-[10px] text-amber-300 text-right font-mono">Rendimento netto: +€ ${formatEuroCurrency(d.hybridYield)}</div>
+                            
+                            <div class="flex justify-between items-center gap-4 pt-1 border-t border-slate-800">
+                                <span class="text-emerald-400 flex items-center gap-1.5">
+                                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span> 100% Salvaguardia:
+                                </span>
+                                <span class="text-slate-300 font-mono">€ ${formatEuroCurrency(d.safeguardingBalance)}</span>
+                            </div>
+                            
+                            <div class="flex justify-between items-center gap-4">
+                                <span class="text-purple-400 flex items-center gap-1.5">
+                                    <span class="w-1.5 h-1.5 rounded-full bg-purple-400"></span> 100% Staking Web3:
+                                </span>
+                                <span class="text-slate-300 font-mono">€ ${formatEuroCurrency(d.stakedBalance)}</span>
+                            </div>
+                        </div>
+                        <div class="mt-2 pt-1.5 border-t border-slate-800 text-[10px] text-slate-400 flex justify-between font-mono">
+                            <span>Safe: € ${formatEuroCurrency(d.hybridSafePortion)}</span>
+                            <span>Staked: € ${formatEuroCurrency(d.hybridStakedPortion)}</span>
+                        </div>
+                    `);
+
+                    tooltip.style('opacity', '1');
+                    const tooltipBox = tooltip.node().getBoundingClientRect();
+                    const tooltipWidth = tooltipBox.width || 240;
+                    let leftPos = cx + margin.left - (tooltipWidth / 2);
+                    if (leftPos < 10) leftPos = 10;
+                    if (leftPos + tooltipWidth > width + margin.left) leftPos = width + margin.left - tooltipWidth;
+
+                    tooltip.style('left', `${leftPos}px`);
+                    tooltip.style('top', `${Math.max(10, cyHybrid + margin.top - 140)}px`);
+                })
+                .on('pointerleave', function () {
+                    crosshair.style('opacity', 0);
+                    dotSafe.style('opacity', 0);
+                    dotStaked.style('opacity', 0);
+                    dotHybrid.style('opacity', 0);
+                    tooltip.style('opacity', 0);
+                });
+        }
+
+        // Responsive D3 Resize handler
+        let d3ResizeDebounce = null;
+        window.addEventListener('resize', () => {
+            if (d3ResizeDebounce) clearTimeout(d3ResizeDebounce);
+            d3ResizeDebounce = setTimeout(() => {
+                if (cachedYieldResult && cachedYieldResult.trajectory) {
+                    renderD3YieldChart(cachedYieldResult.trajectory, cachedYieldResult.params);
+                }
+            }, 250);
+        });
+
         async function connectBrowserWallet() {
             if (typeof window.ethereum !== 'undefined') {
                 try {
@@ -1156,6 +1770,9 @@
                 const data = await res.json();
 
                 // Format Fiat Balances
+                if (data.fiat && data.fiat.eur) {
+                    currentRawEurBalance = data.fiat.eur.balance;
+                }
                 document.getElementById('balance-eur').innerHTML = '&euro; ' + Number(data.fiat.eur.balance).toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
                 document.getElementById('balance-usd').innerHTML = '$ ' + Number(data.fiat.usd.balance).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
 
@@ -1182,6 +1799,9 @@
                 if (data.kycStatus) {
                     renderKycOverview(data.kycStatus);
                 }
+
+                // Run Yield Strategy Simulation
+                runYieldSimulation();
 
                 loadAuditLog();
             } catch (err) {
