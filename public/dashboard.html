@@ -1,0 +1,1391 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EMI Gateway - Payout Fiat & On-Chain Autonomo</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .rail-btn.active {
+            background-color: #059669;
+            color: white;
+            border-color: #10b981;
+        }
+    </style>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen p-4 md:p-8 font-sans selection:bg-emerald-500 selection:text-white">
+    <div class="max-w-7xl mx-auto space-y-8">
+        
+        <!-- Header -->
+        <div class="flex flex-col md:flex-row justify-between items-start md:items-center border-b border-slate-800 pb-6 gap-4">
+            <div>
+                <div class="flex items-center gap-3">
+                    <h1 class="text-3xl font-extrabold text-white tracking-tight">Cruscotto Regolamento & Payout</h1>
+                    <span class="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 flex items-center gap-1.5">
+                        <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span> Licenza EMI Attiva (EMD2)
+                    </span>
+                    <span class="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-blue-500/10 text-blue-400 border border-blue-500/20 font-mono">
+                        ZERO .ENV • AUTONOMO
+                    </span>
+                </div>
+                <p class="text-sm text-slate-400 mt-1">
+                    Esecuzione reale di transazioni fiat (SEPA TIPS / SWIFT GPI) e on-chain (Smart Contract ERC-20 EVM) con oracoli di prezzo aggregati.
+                </p>
+            </div>
+            <div class="flex flex-wrap items-center gap-3 text-sm">
+                <!-- Connect Web3 Browser Wallet Button -->
+                <button type="button" id="connect-wallet-btn" onclick="connectBrowserWallet()" class="px-3.5 py-2 bg-slate-900 hover:bg-slate-800 border border-purple-700/60 text-purple-300 rounded-lg text-xs font-semibold transition flex items-center gap-2">
+                    <span id="wallet-status-dot" class="w-2 h-2 rounded-full bg-purple-400"></span>
+                    <span id="wallet-btn-text">Collega Web3 Wallet</span>
+                </button>
+                <a href="/admin/config.html" class="px-4 py-2 bg-slate-900 hover:bg-slate-800 border border-slate-700 hover:border-blue-400 text-blue-400 rounded-lg transition duration-150 flex items-center gap-2">
+                    <span>🛡️</span> Console Rischio & AML
+                </a>
+                <a href="/" class="text-slate-400 hover:text-white transition">&larr; Home</a>
+            </div>
+        </div>
+
+        <!-- Quick Section Navigation Bar -->
+        <div class="flex flex-wrap items-center gap-2 p-2 bg-slate-900/60 border border-slate-800 rounded-xl text-xs font-medium">
+            <span class="text-slate-500 uppercase tracking-wider text-[10px] font-mono px-2">Navigazione Rapida:</span>
+            <a href="#balances-section" class="px-3 py-1.5 rounded-lg bg-slate-800/80 hover:bg-slate-700 text-slate-300 hover:text-white transition flex items-center gap-1.5">
+                <span>💰</span> Saldi & Riserva EMI
+            </a>
+            <a href="#oracle-section" class="px-3 py-1.5 rounded-lg bg-slate-800/80 hover:bg-slate-700 text-slate-300 hover:text-white transition flex items-center gap-1.5">
+                <span>📈</span> Oracolo & Controvalore
+            </a>
+            <a href="#kyc-section" class="px-3 py-1.5 rounded-lg bg-blue-950/80 hover:bg-blue-900 text-blue-300 border border-blue-800/60 transition flex items-center gap-1.5">
+                <span>🛡️</span> Conformità KYC (Tier 1-3)
+                <span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
+            </a>
+            <a href="#payout-section" class="px-3 py-1.5 rounded-lg bg-slate-800/80 hover:bg-slate-700 text-slate-300 hover:text-white transition flex items-center gap-1.5">
+                <span>⚡</span> Disposizione Payout
+            </a>
+            <a href="#audit-section" class="px-3 py-1.5 rounded-lg bg-slate-800/80 hover:bg-slate-700 text-slate-300 hover:text-white transition flex items-center gap-1.5">
+                <span>📜</span> Registro di Audit SHA-256
+            </a>
+        </div>
+
+        <!-- Multi-Rail Balances Grid -->
+        <div id="balances-section" class="grid grid-cols-1 md:grid-cols-4 gap-5">
+            <!-- EUR E-Money Account -->
+            <div class="bg-slate-900 border border-slate-800 p-5 rounded-xl relative overflow-hidden shadow-sm">
+                <div class="flex justify-between items-start mb-2">
+                    <span class="text-xs font-semibold tracking-wider uppercase text-slate-400">Conto Moneta Elettronica EUR</span>
+                    <span class="text-xs px-2 py-0.5 rounded bg-emerald-950 text-emerald-400 border border-emerald-800 font-mono">SEPA TIPS</span>
+                </div>
+                <div class="text-2xl md:text-3xl font-mono font-bold text-emerald-400 mt-1" id="balance-eur">
+                    &euro; 1.250.000,00
+                </div>
+                <div class="text-xs text-slate-400 mt-3 font-mono truncate" id="iban-display">
+                    IBAN: <span class="text-slate-300">IT60X0542811101000000123456</span>
+                </div>
+                <div class="text-[11px] text-slate-500 mt-0.5">Clearing EBICS / CBI Diretto (TIPS Instant)</div>
+            </div>
+
+            <!-- USD E-Money Account -->
+            <div class="bg-slate-900 border border-slate-800 p-5 rounded-xl relative overflow-hidden shadow-sm">
+                <div class="flex justify-between items-start mb-2">
+                    <span class="text-xs font-semibold tracking-wider uppercase text-slate-400">Conto Moneta Elettronica USD</span>
+                    <span class="text-xs px-2 py-0.5 rounded bg-blue-950 text-blue-400 border border-blue-800 font-mono">SWIFT GPI</span>
+                </div>
+                <div class="text-2xl md:text-3xl font-mono font-bold text-blue-400 mt-1" id="balance-usd">
+                    $ 980.000,00
+                </div>
+                <div class="text-xs text-slate-400 mt-3 font-mono truncate" id="usd-account-display">
+                    BIC: <span class="text-slate-300">EMIIE2DXXX</span> • Acc: <span class="text-slate-300">US4409823019482</span>
+                </div>
+                <div class="text-[11px] text-slate-500 mt-0.5">SWIFT MT103 / Fedwire Real-Time Tracker</div>
+            </div>
+
+            <!-- Web3 Digital Asset Vault -->
+            <div class="bg-slate-900 border border-slate-800 p-5 rounded-xl relative overflow-hidden shadow-sm">
+                <div class="flex justify-between items-start mb-2">
+                    <span class="text-xs font-semibold tracking-wider uppercase text-slate-400">Vault On-Chain (Smart Contract)</span>
+                    <span class="text-xs px-2 py-0.5 rounded bg-purple-950 text-purple-400 border border-purple-800 font-mono">ERC-20 EVM</span>
+                </div>
+                <div class="text-lg font-mono font-bold text-purple-400 mt-1 flex flex-col gap-0.5">
+                    <div id="balance-eurc">450.000,00 EURC</div>
+                    <div class="text-xs text-purple-300 font-normal" id="balance-usdc">620.000,00 USDC • 42.5 ETH</div>
+                </div>
+                <div class="text-xs text-slate-400 mt-3 font-mono truncate" id="vault-address-display">
+                    Relayer: <span class="text-slate-300" id="relayer-addr">0x...</span>
+                </div>
+                <div class="text-[11px] text-slate-500 mt-0.5">Ethereum • Polygon • Arbitrum One</div>
+            </div>
+
+            <!-- Safeguarding & Regulatory Ratio -->
+            <div class="bg-slate-900 border border-slate-800 p-5 rounded-xl relative overflow-hidden shadow-sm">
+                <div class="flex justify-between items-start mb-2">
+                    <span class="text-xs font-semibold tracking-wider uppercase text-slate-400">Riserva di Salvaguardia</span>
+                    <span class="text-xs px-2 py-0.5 rounded bg-amber-950 text-amber-400 border border-amber-800 font-mono">EMD2 REGULATED</span>
+                </div>
+                <div class="text-2xl md:text-3xl font-mono font-bold text-amber-400 mt-1" id="safeguarding-ratio">
+                    147.4%
+                </div>
+                <div class="text-xs text-slate-400 mt-3 flex items-center gap-1.5">
+                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span> 100% Fondi Clienti Segregati
+                </div>
+                <div class="text-[11px] text-slate-500 mt-0.5">Banca Depositaria Istituzionale (Banca d'Italia)</div>
+            </div>
+        </div>
+
+        <!-- Real-Time Oracle & On-Chain Holdings Market Valuation Utility -->
+        <div id="oracle-section" class="bg-slate-900 border border-slate-800 p-6 md:p-8 rounded-2xl shadow-xl space-y-6">
+            <div class="flex flex-col md:flex-row justify-between items-start md:items-center pb-4 border-b border-slate-800 gap-4">
+                <div>
+                    <div class="flex items-center gap-3">
+                        <h2 class="text-xl font-bold text-white flex items-center gap-2">
+                            <span>📈</span> Controvalore di Mercato On-Chain vs Saldi Fiat (Oracolo Aggregato)
+                        </h2>
+                        <span class="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 font-mono flex items-center gap-1.5">
+                            <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span> ORACLE LIVE
+                        </span>
+                    </div>
+                    <p class="text-sm text-slate-400 mt-1">
+                        Valutazione consolidata in tempo reale delle riserve on-chain (EURC, USDC, ETH) rapportate ai saldi fiat (EUR/USD) tramite feed Chainlink DON, BCE e Uniswap TWAP.
+                    </p>
+                </div>
+                <div class="flex items-center gap-3 text-xs font-mono text-slate-400 bg-slate-950 px-3 py-1.5 rounded-lg border border-slate-800">
+                    <span>Round: <strong class="text-emerald-400" id="oracle-round-id">#1844674...</strong></span>
+                    <span class="text-slate-600">•</span>
+                    <span>Aggiornato: <span class="text-slate-300" id="oracle-updated-time">Ora</span></span>
+                </div>
+            </div>
+
+            <!-- Comparative Overview Cards -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-5">
+                <!-- Total Consolidated Treasury -->
+                <div class="bg-slate-950/70 border border-slate-800 p-5 rounded-xl space-y-3">
+                    <div class="flex justify-between items-center">
+                        <span class="text-xs font-semibold uppercase text-slate-400 tracking-wider">Tesoreria Totale Consolidata</span>
+                        <span class="text-[10px] px-2 py-0.5 bg-blue-950 text-blue-300 rounded border border-blue-800 font-mono">FIAT + WEB3</span>
+                    </div>
+                    <div>
+                        <div class="text-2xl font-mono font-bold text-white" id="val-total-eur">&euro; 0,00</div>
+                        <div class="text-sm font-mono text-slate-400 mt-0.5" id="val-total-usd">$ 0,00</div>
+                    </div>
+                    <!-- Allocation progress bar -->
+                    <div class="space-y-1 pt-1">
+                        <div class="flex justify-between text-[11px] font-mono text-slate-400">
+                            <span>Fiat: <strong class="text-emerald-400" id="pct-fiat">0%</strong></span>
+                            <span>On-Chain: <strong class="text-purple-400" id="pct-onchain">0%</strong></span>
+                        </div>
+                        <div class="w-full bg-slate-800 h-2 rounded-full overflow-hidden flex">
+                            <div id="bar-fiat" class="bg-emerald-500 h-full transition-all duration-500" style="width: 50%"></div>
+                            <div id="bar-onchain" class="bg-purple-500 h-full transition-all duration-500" style="width: 50%"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- On-Chain Holdings Market Value -->
+                <div class="bg-slate-950/70 border border-slate-800 p-5 rounded-xl space-y-3">
+                    <div class="flex justify-between items-center">
+                        <span class="text-xs font-semibold uppercase text-purple-300 tracking-wider">Controvalore Asset On-Chain</span>
+                        <span class="text-[10px] px-2 py-0.5 bg-purple-950 text-purple-300 rounded border border-purple-800 font-mono">LIVE EVM</span>
+                    </div>
+                    <div>
+                        <div class="text-2xl font-mono font-bold text-purple-400" id="val-onchain-eur">&euro; 0,00</div>
+                        <div class="text-sm font-mono text-slate-400 mt-0.5" id="val-onchain-usd">$ 0,00</div>
+                    </div>
+                    <div class="text-xs font-mono space-y-0.5 text-slate-400 pt-1 border-t border-slate-800/80">
+                        <div class="flex justify-between">
+                            <span>EURC (1:1 EUR):</span>
+                            <span class="text-slate-200" id="val-eurc-sub">€ 0,00</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span>USDC (1:1 USD):</span>
+                            <span class="text-slate-200" id="val-usdc-sub">$ 0,00</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span>ETH (Gas/Treasury):</span>
+                            <span class="text-slate-200" id="val-eth-sub">€ 0,00</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Fiat Liquidity Valuation -->
+                <div class="bg-slate-950/70 border border-slate-800 p-5 rounded-xl space-y-3">
+                    <div class="flex justify-between items-center">
+                        <span class="text-xs font-semibold uppercase text-emerald-300 tracking-wider">Liquidità di Cassa Fiat</span>
+                        <span class="text-[10px] px-2 py-0.5 bg-emerald-950 text-emerald-300 rounded border border-emerald-800 font-mono">SEPA / SWIFT</span>
+                    </div>
+                    <div>
+                        <div class="text-2xl font-mono font-bold text-emerald-400" id="val-fiat-eur">&euro; 0,00</div>
+                        <div class="text-sm font-mono text-slate-400 mt-0.5" id="val-fiat-usd">$ 0,00</div>
+                    </div>
+                    <div class="text-xs font-mono space-y-0.5 text-slate-400 pt-1 border-t border-slate-800/80">
+                        <div class="flex justify-between">
+                            <span>Conto EUR (TIPS/CBI):</span>
+                            <span class="text-slate-200" id="val-fiat-eur-sub">€ 0,00</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span>Conto USD (SWIFT):</span>
+                            <span class="text-slate-200" id="val-fiat-usd-sub">$ 0,00</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span>Tasso EUR/USD:</span>
+                            <span class="text-emerald-400 font-bold" id="rate-eurusd-sub">1.0845</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Oracle Tickers Ribbon -->
+            <div class="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                <div class="bg-slate-950 p-3 rounded-lg border border-slate-800 text-xs font-mono">
+                    <div class="text-slate-500 text-[10px]">ETH / USD (Chainlink)</div>
+                    <div class="text-base font-bold text-white mt-0.5" id="tick-eth-usd">$ 3,450.80</div>
+                    <div class="text-emerald-400 text-[10px]" id="tick-eth-chg">+2.41% • 99.98% conf.</div>
+                </div>
+                <div class="bg-slate-950 p-3 rounded-lg border border-slate-800 text-xs font-mono">
+                    <div class="text-slate-500 text-[10px]">ETH / EUR (Aggregato)</div>
+                    <div class="text-base font-bold text-white mt-0.5" id="tick-eth-eur">&euro; 3,182.02</div>
+                    <div class="text-slate-400 text-[10px]">Chainlink + BCE Fix</div>
+                </div>
+                <div class="bg-slate-950 p-3 rounded-lg border border-slate-800 text-xs font-mono">
+                    <div class="text-slate-500 text-[10px]">EUR / USD (BCE / Forex)</div>
+                    <div class="text-base font-bold text-white mt-0.5" id="tick-eur-usd">1.0845</div>
+                    <div class="text-emerald-400 text-[10px]">+0.12% • Tasso Ufficiale</div>
+                </div>
+                <div class="bg-slate-950 p-3 rounded-lg border border-slate-800 text-xs font-mono">
+                    <div class="text-slate-500 text-[10px]">EURC & USDC Parità</div>
+                    <div class="text-base font-bold text-emerald-400 mt-0.5">1:1 Peg Confermato</div>
+                    <div class="text-slate-400 text-[10px]">Riserva 100% Verificata</div>
+                </div>
+            </div>
+
+            <!-- Interactive Conversion Utility Widget -->
+            <div class="bg-slate-950 p-5 md:p-6 rounded-xl border border-slate-800 space-y-4">
+                <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-2">
+                    <h3 class="text-base font-bold text-white flex items-center gap-2">
+                        <span>🔄</span> Convertitore Istantaneo Fiat & On-Chain (Oracle Calculator)
+                    </h3>
+                    <span class="text-xs text-slate-400 font-mono">Prezzi aggiornati in tempo reale tramite oracoli decentralizzati</span>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-12 gap-3 items-center">
+                    <!-- Amount Input -->
+                    <div class="md:col-span-3">
+                        <label class="block text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-1">Importo da Convertire</label>
+                        <input type="number" id="convert-amount" value="1" min="0.000001" step="any" oninput="runInstantConversion()" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-white font-mono text-sm focus:border-emerald-500 outline-none">
+                    </div>
+
+                    <!-- From Asset -->
+                    <div class="md:col-span-3">
+                        <label class="block text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-1">Da (Asset di Origine)</label>
+                        <select id="convert-from" onchange="runInstantConversion()" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-white text-sm focus:border-emerald-500 outline-none">
+                            <option value="ETH" selected>ETH (Ethereum)</option>
+                            <option value="EURC">EURC (Euro Coin On-Chain)</option>
+                            <option value="USDC">USDC (USD Coin On-Chain)</option>
+                            <option value="EUR">EUR (Moneta Fiat SEPA)</option>
+                            <option value="USD">USD (Moneta Fiat SWIFT)</option>
+                        </select>
+                    </div>
+
+                    <!-- Swap Button -->
+                    <div class="md:col-span-1 flex justify-center pt-2 md:pt-4">
+                        <button type="button" onclick="swapConvertAssets()" title="Inverti Asset" class="p-2.5 bg-slate-800 hover:bg-slate-700 text-emerald-400 hover:text-white rounded-lg border border-slate-700 transition">
+                            ⇄
+                        </button>
+                    </div>
+
+                    <!-- To Asset -->
+                    <div class="md:col-span-3">
+                        <label class="block text-[11px] font-semibold text-slate-400 uppercase tracking-wider mb-1">A (Asset di Destinazione)</label>
+                        <select id="convert-to" onchange="runInstantConversion()" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-white text-sm focus:border-emerald-500 outline-none">
+                            <option value="EUR" selected>EUR (Moneta Fiat SEPA)</option>
+                            <option value="USD">USD (Moneta Fiat SWIFT)</option>
+                            <option value="ETH">ETH (Ethereum)</option>
+                            <option value="EURC">EURC (Euro Coin On-Chain)</option>
+                            <option value="USDC">USDC (USD Coin On-Chain)</option>
+                        </select>
+                    </div>
+
+                    <!-- Apply to Payout Button -->
+                    <div class="md:col-span-2 pt-2 md:pt-4">
+                        <button type="button" onclick="applyConversionToPayout()" class="w-full px-3 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-semibold rounded-lg text-xs transition duration-150 shadow-md">
+                            Applica al Payout &rarr;
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Conversion Output Box -->
+                <div id="convert-result-box" class="p-4 bg-slate-900/90 border border-emerald-900/40 rounded-xl flex flex-col md:flex-row justify-between items-start md:items-center gap-3">
+                    <div>
+                        <div class="text-xs text-slate-400 font-mono">Valore Calcolato dall'Oracolo:</div>
+                        <div class="text-xl md:text-2xl font-mono font-bold text-emerald-400 mt-0.5" id="convert-result-text">
+                            1 ETH = &euro; 3.182,02 EUR
+                        </div>
+                    </div>
+                    <div class="text-right text-xs font-mono text-slate-400">
+                        <div id="convert-rate-label">Tasso: 1 ETH = 3.182,02 EUR</div>
+                        <div class="text-[11px] text-slate-500" id="convert-source-label">Fonte: Chainlink DON + BCE Fix</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- KYC Status Overview & Regulatory Compliance Dossier -->
+        <div id="kyc-section" class="bg-slate-900 border border-slate-800 p-6 md:p-8 rounded-2xl shadow-xl space-y-6">
+            <div class="flex flex-col md:flex-row justify-between items-start md:items-center pb-4 border-b border-slate-800 gap-4">
+                <div>
+                    <div class="flex items-center gap-3">
+                        <h2 class="text-xl font-bold text-white flex items-center gap-2">
+                            <span>🛡️</span> Stato Conformità KYC & Livelli di Verifica (Regolamentazione EMI)
+                        </h2>
+                        <span class="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-blue-500/10 text-blue-400 border border-blue-500/20 font-mono" id="kyc-badge-header">
+                            TIER 3 ATTIVO
+                        </span>
+                    </div>
+                    <p class="text-sm text-slate-400 mt-1">
+                        Verifica dei requisiti di identificazione della clientela (D.Lgs. 231/07 & 5AMLD/6AMLD) per l'operatività sui circuiti di moneta elettronica istituzionali.
+                    </p>
+                </div>
+                <div class="flex items-center gap-4 text-xs font-mono bg-slate-950 p-2.5 rounded-xl border border-slate-800">
+                    <div class="flex flex-col text-right">
+                        <span class="text-slate-400">Avanzamento Fascicolo:</span>
+                        <span class="text-emerald-400 font-bold" id="kyc-progress-label">83% Completato</span>
+                    </div>
+                    <div class="w-20 bg-slate-800 h-2.5 rounded-full overflow-hidden">
+                        <div id="kyc-progress-bar" class="bg-emerald-500 h-full transition-all duration-500" style="width: 83%"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- KYC Verification Tiers Grid -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-5" id="kyc-tiers-grid">
+                <!-- Tier 1 -->
+                <div class="bg-slate-950/80 border border-slate-800 p-5 rounded-xl space-y-3 relative overflow-hidden">
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <span class="text-xs font-semibold uppercase text-slate-400 tracking-wider">Tier 1: Semplificata (SDD)</span>
+                            <div class="text-lg font-bold text-white mt-0.5">Tetto: &euro; 1.000,00</div>
+                        </div>
+                        <span class="px-2 py-0.5 bg-emerald-950 text-emerald-400 border border-emerald-800 rounded text-[10px] font-mono font-semibold">VERIFICATO</span>
+                    </div>
+                    <p class="text-xs text-slate-400">Adeguata verifica semplificata per flussi operativi di base.</p>
+                    <ul class="text-[11px] text-slate-300 space-y-1 pt-1 border-t border-slate-800/80">
+                        <li class="flex items-center gap-1.5"><span class="text-emerald-400">✓</span> Documento legale rappresentante</li>
+                        <li class="flex items-center gap-1.5"><span class="text-emerald-400">✓</span> Email e telefono certificati</li>
+                    </ul>
+                </div>
+
+                <!-- Tier 2 -->
+                <div class="bg-slate-950/80 border border-slate-800 p-5 rounded-xl space-y-3 relative overflow-hidden">
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <span class="text-xs font-semibold uppercase text-slate-400 tracking-wider">Tier 2: Ordinaria (CDD)</span>
+                            <div class="text-lg font-bold text-white mt-0.5">Tetto: &euro; 50.000,00</div>
+                        </div>
+                        <span class="px-2 py-0.5 bg-emerald-950 text-emerald-400 border border-emerald-800 rounded text-[10px] font-mono font-semibold">VERIFICATO</span>
+                    </div>
+                    <p class="text-xs text-slate-400">Adeguata verifica ordinaria per società e transazioni commerciali.</p>
+                    <ul class="text-[11px] text-slate-300 space-y-1 pt-1 border-t border-slate-800/80">
+                        <li class="flex items-center gap-1.5"><span class="text-emerald-400">✓</span> Prova di residenza / sede legale</li>
+                        <li class="flex items-center gap-1.5"><span class="text-emerald-400">✓</span> Coordinate IBAN d'appoggio verificate</li>
+                        <li class="flex items-center gap-1.5"><span class="text-emerald-400">✓</span> Profilatura di rischio AML iniziale</li>
+                    </ul>
+                </div>
+
+                <!-- Tier 3 -->
+                <div class="bg-slate-950/80 border border-emerald-500/40 p-5 rounded-xl space-y-3 relative overflow-hidden shadow-md">
+                    <div class="flex justify-between items-start">
+                        <div>
+                            <div class="flex items-center gap-1.5">
+                                <span class="text-xs font-semibold uppercase text-emerald-400 tracking-wider">Tier 3: Rafforzata (EDD)</span>
+                                <span class="px-1.5 py-0.2 bg-emerald-500 text-slate-950 font-bold rounded text-[9px]">ATTIVO</span>
+                            </div>
+                            <div class="text-lg font-bold text-white mt-0.5">Tetto: &euro; 500.000,00</div>
+                        </div>
+                        <span class="px-2 py-0.5 bg-amber-950 text-amber-400 border border-amber-800 rounded text-[10px] font-mono font-semibold">IN RINNOVO</span>
+                    </div>
+                    <p class="text-xs text-slate-400">Enhanced Due Diligence per tesoreria istituzionale ed EMI Core.</p>
+                    <ul class="text-[11px] text-slate-300 space-y-1 pt-1 border-t border-slate-800/80">
+                        <li class="flex items-center gap-1.5"><span class="text-emerald-400">✓</span> Visura Camerale CCIAA & Registro UBO</li>
+                        <li class="flex items-center gap-1.5"><span class="text-emerald-400">✓</span> Attestazione Source of Wealth</li>
+                        <li class="flex items-center gap-1.5"><span class="text-amber-400">!</span> Rinnovo annuale antiriciclaggio richiesto</li>
+                    </ul>
+                </div>
+            </div>
+
+            <!-- KYC Compliance Checklist & Pending Documentation -->
+            <div class="space-y-3 pt-2">
+                <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-2">
+                    <h3 class="text-sm font-bold text-white uppercase tracking-wider flex items-center gap-2">
+                        <span>📋</span> Dossier Documentale di Conformità Regolamentare
+                    </h3>
+                    <div class="text-xs text-slate-400 font-mono">
+                        Soggetto: <strong class="text-slate-200" id="kyc-entity-name">Delcoding Logistics & Tech S.p.A.</strong> (P.IVA: IT09823410928)
+                    </div>
+                </div>
+
+                <div class="overflow-x-auto border border-slate-800 rounded-xl">
+                    <table class="w-full text-left border-collapse text-xs">
+                        <thead>
+                            <tr class="bg-slate-950 text-slate-400 border-b border-slate-800">
+                                <th class="p-3.5">ID Documento</th>
+                                <th class="p-3.5">Tipologia & Denominazione</th>
+                                <th class="p-3.5">Livello KYC</th>
+                                <th class="p-3.5 text-center">Stato Verifica</th>
+                                <th class="p-3.5">Validità / Scadenza</th>
+                                <th class="p-3.5">File / Ente Validatore</th>
+                                <th class="p-3.5 text-center">Azione</th>
+                            </tr>
+                        </thead>
+                        <tbody id="kyc-documents-body" class="divide-y divide-slate-800/60 font-mono">
+                            <!-- Populated dynamically -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Payout Execution Section -->
+        <div id="payout-section" class="bg-slate-900 border border-slate-800 p-6 md:p-8 rounded-2xl shadow-xl">
+            <div class="flex flex-col md:flex-row justify-between md:items-center pb-6 border-b border-slate-800 gap-4">
+                <div>
+                    <h2 class="text-xl font-bold text-white flex items-center gap-2">
+                        <span>⚡</span> Disposizione Payout Multi-Rail & Smart Contract
+                    </h2>
+                    <p class="text-sm text-slate-400 mt-1">
+                        Seleziona il binario di pagamento. Tutte le transazioni vengono firmate ed eseguite realmente sui circuiti ISO 20022 o sulla blockchain.
+                    </p>
+                </div>
+
+                <!-- Rail Selection Tabs -->
+                <div class="flex bg-slate-950 p-1 rounded-xl border border-slate-800 self-start md:self-auto">
+                    <button type="button" onclick="selectRail('SEPA')" id="tab-sepa" class="rail-btn active px-4 py-2 rounded-lg text-sm font-semibold transition border border-transparent">
+                        SEPA Instant (EUR)
+                    </button>
+                    <button type="button" onclick="selectRail('SWIFT')" id="tab-swift" class="rail-btn px-4 py-2 rounded-lg text-sm font-semibold text-slate-400 hover:text-white transition border border-transparent">
+                        SWIFT GPI (USD)
+                    </button>
+                    <button type="button" onclick="selectRail('ON_CHAIN')" id="tab-onchain" class="rail-btn px-4 py-2 rounded-lg text-sm font-semibold text-slate-400 hover:text-white transition border border-transparent">
+                        Web3 On-Chain (Smart Contract)
+                    </button>
+                </div>
+            </div>
+
+            <!-- Form -->
+            <form id="payout-form" class="mt-6 space-y-6">
+                <!-- SEPA Inputs -->
+                <div id="fields-sepa" class="grid grid-cols-1 md:grid-cols-3 gap-5">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">IBAN Beneficiario SEPA</label>
+                        <input type="text" id="sepa-iban" placeholder="IT93L0306902104000000123456" class="w-full bg-slate-800 border border-slate-700 rounded-lg p-3 text-white font-mono uppercase focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 outline-none transition text-sm">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Intestatario / Ragione Sociale</label>
+                        <input type="text" id="sepa-name" placeholder="Acme Logistics Solutions SRL" class="w-full bg-slate-800 border border-slate-700 rounded-lg p-3 text-white focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 outline-none transition text-sm">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Importo EUR (&euro;)</label>
+                        <input type="number" id="sepa-amount" step="0.01" min="1" placeholder="50000.00" class="w-full bg-slate-800 border border-slate-700 rounded-lg p-3 text-white font-mono focus:border-emerald-500 focus:ring-1 focus:ring-emerald-500 outline-none transition text-sm">
+                    </div>
+                    <div class="md:col-span-3">
+                        <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Causale Bonifico / RmtInf (ISO 20022 pacs.008)</label>
+                        <input type="text" id="sepa-remittance" placeholder="Fattura Commerciale 2026/88 - Regolamento Diretto EBICS" class="w-full bg-slate-800 border border-slate-700 rounded-lg p-3 text-white focus:border-emerald-500 outline-none transition text-sm">
+                    </div>
+                </div>
+
+                <!-- SWIFT Inputs -->
+                <div id="fields-swift" class="grid grid-cols-1 md:grid-cols-3 gap-5 hidden">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Conto Beneficiario / Account Number</label>
+                        <input type="text" id="swift-account" placeholder="US4409823019482" class="w-full bg-slate-800 border border-slate-700 rounded-lg p-3 text-white font-mono uppercase focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition text-sm">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Codice SWIFT / BIC Bancario</label>
+                        <input type="text" id="swift-bic" placeholder="CHASUS33XXX" class="w-full bg-slate-800 border border-slate-700 rounded-lg p-3 text-white font-mono uppercase focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition text-sm">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Importo USD ($)</label>
+                        <input type="number" id="swift-amount" step="0.01" min="1" placeholder="25000.00" class="w-full bg-slate-800 border border-slate-700 rounded-lg p-3 text-white font-mono focus:border-blue-500 focus:ring-1 focus:ring-blue-500 outline-none transition text-sm">
+                    </div>
+                    <div class="md:col-span-2">
+                        <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Intestatario / Beneficiario Internazionale</label>
+                        <input type="text" id="swift-name" placeholder="Global Tech Trading LLC" class="w-full bg-slate-800 border border-slate-700 rounded-lg p-3 text-white focus:border-blue-500 outline-none transition text-sm">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Causale Estera (SWIFT MT103 Field :70:)</label>
+                        <input type="text" id="swift-remittance" placeholder="Treasury USD Rebalancing" class="w-full bg-slate-800 border border-slate-700 rounded-lg p-3 text-white focus:border-blue-500 outline-none transition text-sm">
+                    </div>
+                </div>
+
+                <!-- On-Chain Inputs -->
+                <div id="fields-onchain" class="grid grid-cols-1 md:grid-cols-4 gap-5 hidden">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Asset / Token E-Money</label>
+                        <select id="onchain-token" class="w-full bg-slate-800 border border-slate-700 rounded-lg p-3 text-white focus:border-purple-500 focus:ring-1 focus:ring-purple-500 outline-none transition text-sm">
+                            <option value="EURC">EURC (Circle Euro Coin Regulated ERC-20)</option>
+                            <option value="USDC">USDC (Circle USD Coin ERC-20)</option>
+                            <option value="ETH">ETH (Native Gas Settlement)</option>
+                        </select>
+                    </div>
+                    <div class="md:col-span-2">
+                        <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Indirizzo EVM Beneficiario (Ethereum / Polygon)</label>
+                        <input type="text" id="onchain-address" placeholder="0x71c8360437cd825d5389b092a4cd471c557b7a8f" class="w-full bg-slate-800 border border-slate-700 rounded-lg p-3 text-white font-mono focus:border-purple-500 focus:ring-1 focus:ring-purple-500 outline-none transition text-sm">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Importo Token</label>
+                        <input type="number" id="onchain-amount" step="0.001" min="0.001" placeholder="10000.00" class="w-full bg-slate-800 border border-slate-700 rounded-lg p-3 text-white font-mono focus:border-purple-500 focus:ring-1 focus:ring-purple-500 outline-none transition text-sm">
+                    </div>
+                    <div class="md:col-span-4">
+                        <div class="bg-purple-950/40 border border-purple-800/60 p-3 rounded-lg text-xs text-purple-300 flex flex-col md:flex-row items-start md:items-center justify-between gap-2">
+                            <span>Firma Crittografica: <strong class="text-purple-200">ECDSA secp256k1 EIP-1559 Reale</strong> con encoding calldata smart contract</span>
+                            <span class="text-emerald-400 font-semibold" id="relayer-status-text">Relayer Istituzionale Operativo (Zero configurazione richiesta)</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- AML & Compliance Real-Time Feedback Strip -->
+                <div id="compliance-preview" class="p-4 rounded-xl bg-slate-950 border border-slate-800 text-xs text-slate-400 flex flex-col md:flex-row justify-between items-start md:items-center gap-2">
+                    <div class="flex items-center gap-2">
+                        <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
+                        <span>Controlli di Conformità EMI: <strong>KYC Tier 3</strong> (Tetto autorizzato: &euro; 500.000,00 per transazione)</span>
+                    </div>
+                    <div class="text-slate-500">
+                        Sanction Screening: OFAC / EU Consolidated • Algoritmo Anti-Smurfing Attivo
+                    </div>
+                </div>
+
+                <!-- Submit Button & Messages -->
+                <div class="pt-2">
+                    <button type="submit" id="submit-btn" class="w-full md:w-auto px-8 py-3.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl shadow-lg transition duration-200 flex items-center justify-center gap-2">
+                        <span>⚡</span> <span id="submit-label">Esegui Regolamento Diretto SEPA Instant</span>
+                    </button>
+                </div>
+            </form>
+
+            <!-- Execution Status Box -->
+            <div id="result-box" class="mt-6 p-6 rounded-xl border hidden transition-all">
+                <div class="flex items-start justify-between">
+                    <div>
+                        <div id="result-title" class="text-lg font-bold"></div>
+                        <div id="result-desc" class="text-sm mt-1 text-slate-300"></div>
+                    </div>
+                    <span id="result-badge" class="px-3 py-1 rounded text-xs font-mono font-semibold"></span>
+                </div>
+                <div id="result-details" class="mt-4 pt-4 border-t border-slate-800/80 grid grid-cols-1 md:grid-cols-3 gap-3 text-xs font-mono"></div>
+                <!-- Inspect Raw Clearing Message Button -->
+                <div id="inspect-action" class="mt-4 pt-3 border-t border-slate-800/60 hidden">
+                    <button type="button" id="inspect-msg-btn" onclick="inspectMessage(lastSettledTxId)" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-emerald-400 border border-slate-700 rounded-lg text-xs font-mono flex items-center gap-2">
+                        <span>📄</span> Ispeziona Messaggio di Regolamento Ufficiale (ISO 20022 XML / SWIFT / Signed EVM)
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Chained Audit Ledger Section -->
+        <div id="audit-section" class="bg-slate-900 border border-slate-800 p-6 md:p-8 rounded-2xl shadow-xl space-y-6">
+            <div class="flex flex-col md:flex-row justify-between md:items-center gap-4">
+                <div>
+                    <h2 class="text-xl font-bold text-white flex items-center gap-2">
+                        <span>📜</span> Registro di Audit Immutabile (Core Ledger SHA-256)
+                    </h2>
+                    <p class="text-sm text-slate-400 mt-1">
+                        Tracciabilità crittografica concatenata delle transazioni fiat e on-chain per audit bancari e vigilanza BCE.
+                    </p>
+                </div>
+                <div class="flex flex-wrap items-center gap-3">
+                    <button onclick="verifyIntegrity()" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 border border-slate-700 hover:border-emerald-500 text-emerald-400 text-xs font-semibold rounded-lg transition duration-200 flex items-center gap-2">
+                        <span>🔒</span> Verifica Integrità Catena
+                    </button>
+                    <button onclick="exportAuditJson()" class="px-3 py-2 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-blue-400 text-xs rounded-lg transition">
+                        ↓ Esporta JSON Audit
+                    </button>
+                    <button onclick="loadLedgerData()" class="px-3 py-2 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 text-xs rounded-lg transition">
+                        ↻ Aggiorna
+                    </button>
+                </div>
+            </div>
+
+            <!-- Interactive Filter Bar (Fiat/SEPA, Fiat/SWIFT, On-Chain/Web3) -->
+            <div class="flex flex-col md:flex-row items-start md:items-center justify-between gap-4 p-3.5 bg-slate-950/80 border border-slate-800 rounded-xl">
+                <div class="flex flex-wrap items-center gap-2">
+                    <span class="text-xs font-semibold text-slate-400 uppercase tracking-wider mr-1">Filtro Circuito:</span>
+                    <button type="button" onclick="setAuditFilter('ALL')" id="filter-all" class="audit-filter-btn px-3 py-1.5 rounded-lg text-xs font-semibold bg-emerald-600 text-white border border-emerald-500 transition duration-150 flex items-center gap-1.5 shadow-sm">
+                        <span>Tutte le Transazioni</span>
+                        <span id="count-all" class="px-1.5 py-0.5 rounded-full bg-emerald-950/80 text-emerald-200 text-[10px] font-mono">0</span>
+                    </button>
+                    <button type="button" onclick="setAuditFilter('SEPA')" id="filter-sepa" class="audit-filter-btn px-3 py-1.5 rounded-lg text-xs font-semibold bg-slate-900 hover:bg-slate-800 text-slate-300 hover:text-white border border-slate-700 transition duration-150 flex items-center gap-1.5">
+                        <span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
+                        <span>Fiat / SEPA</span>
+                        <span id="count-sepa" class="px-1.5 py-0.5 rounded-full bg-slate-800 text-emerald-400 text-[10px] font-mono">0</span>
+                    </button>
+                    <button type="button" onclick="setAuditFilter('SWIFT')" id="filter-swift" class="audit-filter-btn px-3 py-1.5 rounded-lg text-xs font-semibold bg-slate-900 hover:bg-slate-800 text-slate-300 hover:text-white border border-slate-700 transition duration-150 flex items-center gap-1.5">
+                        <span class="w-1.5 h-1.5 rounded-full bg-blue-400"></span>
+                        <span>Fiat / SWIFT</span>
+                        <span id="count-swift" class="px-1.5 py-0.5 rounded-full bg-slate-800 text-blue-400 text-[10px] font-mono">0</span>
+                    </button>
+                    <button type="button" onclick="setAuditFilter('ON_CHAIN')" id="filter-onchain" class="audit-filter-btn px-3 py-1.5 rounded-lg text-xs font-semibold bg-slate-900 hover:bg-slate-800 text-slate-300 hover:text-white border border-slate-700 transition duration-150 flex items-center gap-1.5">
+                        <span class="w-1.5 h-1.5 rounded-full bg-purple-400"></span>
+                        <span>On-Chain / Web3</span>
+                        <span id="count-onchain" class="px-1.5 py-0.5 rounded-full bg-slate-800 text-purple-400 text-[10px] font-mono">0</span>
+                    </button>
+                </div>
+                <div class="text-xs text-slate-400 font-mono" id="filter-status-text">
+                    Visualizzazione: <span class="text-emerald-400 font-bold">Tutti i Circuiti</span>
+                </div>
+            </div>
+
+            <!-- Verification Status Notice -->
+            <div id="integrity-notice" class="hidden p-4 rounded-xl text-xs font-mono transition-all"></div>
+
+            <!-- Audit Trail Table -->
+            <div class="overflow-x-auto border border-slate-800 rounded-xl">
+                <table class="w-full text-left border-collapse text-xs">
+                    <thead>
+                        <tr class="bg-slate-950 text-slate-400 border-b border-slate-800">
+                            <th class="p-3.5">ID Transazione</th>
+                            <th class="p-3.5">Data & Ora</th>
+                            <th class="p-3.5">Circuito / Rail</th>
+                            <th class="p-3.5">Destinatario / Conto</th>
+                            <th class="p-3.5 text-right">Importo</th>
+                            <th class="p-3.5 text-center">Rischio AML</th>
+                            <th class="p-3.5 text-center">Stato Regolamento</th>
+                            <th class="p-3.5 text-right font-mono">Hash Blocco (SHA-256)</th>
+                            <th class="p-3.5 text-center">Azioni</th>
+                        </tr>
+                    </thead>
+                    <tbody id="audit-log-body" class="divide-y divide-slate-800/60 font-mono">
+                        <!-- Populated dynamically -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Modal for ISO 20022 / SWIFT MT103 / On-Chain Message Inspection -->
+    <div id="msg-modal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-slate-900 border border-slate-700 rounded-2xl max-w-4xl w-full p-6 space-y-4 shadow-2xl max-h-[90vh] flex flex-col">
+            <div class="flex justify-between items-center border-b border-slate-800 pb-3">
+                <div>
+                    <h3 class="text-lg font-bold text-white flex items-center gap-2">
+                        <span>📄</span> <span id="modal-title">Messaggio Ufficiale di Clearing Interbancario</span>
+                    </h3>
+                    <span id="modal-format-badge" class="text-xs font-mono text-emerald-400"></span>
+                </div>
+                <button onclick="closeModal()" class="text-slate-400 hover:text-white text-xl p-1">&times;</button>
+            </div>
+            <div class="overflow-y-auto flex-1 bg-slate-950 p-4 rounded-xl border border-slate-800">
+                <pre id="modal-content" class="text-xs font-mono text-emerald-300 whitespace-pre-wrap break-all"></pre>
+            </div>
+            <div class="flex justify-between items-center pt-2">
+                <button onclick="copyModalContent()" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs rounded-lg transition font-mono">
+                    Copia Negli Appunti
+                </button>
+                <button onclick="closeModal()" class="px-5 py-2 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold rounded-lg transition">
+                    Chiudi
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal for KYC Document Upload -->
+    <div id="kyc-modal" class="fixed inset-0 bg-black/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-slate-900 border border-slate-700 rounded-2xl max-w-lg w-full p-6 space-y-4 shadow-2xl">
+            <div class="flex justify-between items-center border-b border-slate-800 pb-3">
+                <div>
+                    <h3 class="text-base font-bold text-white flex items-center gap-2">
+                        <span>📤</span> Carica Documento per Conformità KYC / AML
+                    </h3>
+                    <span class="text-xs text-slate-400" id="kyc-modal-doc-id">DOC-AML-05</span>
+                </div>
+                <button onclick="closeKycModal()" class="text-slate-400 hover:text-white text-xl p-1">&times;</button>
+            </div>
+
+            <form id="kyc-upload-form" class="space-y-4">
+                <input type="hidden" id="kyc-upload-doc-id">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Documento Richiesto</label>
+                    <div class="p-3 bg-slate-950 border border-slate-800 rounded-lg text-xs font-semibold text-white" id="kyc-modal-doc-title">
+                        Rinnovo Questionario Adeguata Verifica Antiriciclaggio
+                    </div>
+                </div>
+
+                <div>
+                    <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-1">Nome File o Documento Caricato</label>
+                    <input type="text" id="kyc-upload-filename" required placeholder="es. Questionario_AML_Firmato_2026.pdf" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-2.5 text-white font-mono text-xs focus:border-emerald-500 outline-none">
+                </div>
+
+                <div class="p-3 bg-slate-950/60 border border-slate-800/80 rounded-lg text-[11px] text-slate-400 space-y-1">
+                    <p class="text-emerald-400 font-semibold">Regolamentazione Bancaria:</p>
+                    <p>I documenti caricati vengono crittografati e sottoposti a verifica notarile / OCR dall'Ufficio Compliance per il mantenimento dei massimali Tier 3.</p>
+                </div>
+
+                <div class="flex justify-end gap-3 pt-2">
+                    <button type="button" onclick="closeKycModal()" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 text-xs rounded-lg transition">
+                        Annulla
+                    </button>
+                    <button type="submit" id="kyc-submit-btn" class="px-5 py-2 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold rounded-lg transition shadow-md">
+                        Invia per Revisione Compliance
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script>
+        let currentRail = 'SEPA';
+        let connectedUserAddress = null;
+        let lastSettledTxId = null;
+        let allAuditLogs = [];
+        let currentAuditFilter = 'ALL'; // 'ALL' | 'SEPA' | 'SWIFT' | 'ON_CHAIN'
+        let liveOracleData = null;
+        let lastConvertedAmount = 0;
+        let lastConvertedAsset = 'EUR';
+
+        function selectRail(rail) {
+            currentRail = rail;
+            document.querySelectorAll('.rail-btn').forEach(btn => btn.classList.remove('active', 'bg-emerald-600', 'bg-blue-600', 'bg-purple-600', 'text-white'));
+            
+            document.getElementById('fields-sepa').classList.add('hidden');
+            document.getElementById('fields-swift').classList.add('hidden');
+            document.getElementById('fields-onchain').classList.add('hidden');
+
+            const submitBtn = document.getElementById('submit-btn');
+            const submitLabel = document.getElementById('submit-label');
+
+            if (rail === 'SEPA') {
+                document.getElementById('tab-sepa').classList.add('active');
+                document.getElementById('fields-sepa').classList.remove('hidden');
+                submitBtn.className = "w-full md:w-auto px-8 py-3.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-xl shadow-lg transition duration-200 flex items-center justify-center gap-2";
+                submitLabel.innerText = "Esegui Regolamento Diretto SEPA Instant";
+            } else if (rail === 'SWIFT') {
+                document.getElementById('tab-swift').classList.add('active');
+                document.getElementById('fields-swift').classList.remove('hidden');
+                submitBtn.className = "w-full md:w-auto px-8 py-3.5 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl shadow-lg transition duration-200 flex items-center justify-center gap-2";
+                submitLabel.innerText = "Disponi Bonifico Internazionale SWIFT GPI";
+            } else if (rail === 'ON_CHAIN') {
+                document.getElementById('tab-onchain').classList.add('active');
+                document.getElementById('fields-onchain').classList.remove('hidden');
+                submitBtn.className = "w-full md:w-auto px-8 py-3.5 bg-purple-600 hover:bg-purple-500 text-white font-bold rounded-xl shadow-lg transition duration-200 flex items-center justify-center gap-2";
+                submitLabel.innerText = "Esegui Transazione On-Chain (Smart Contract)";
+            }
+        }
+
+        function setAuditFilter(filter) {
+            currentAuditFilter = filter;
+            
+            const filterButtons = {
+                'ALL': document.getElementById('filter-all'),
+                'SEPA': document.getElementById('filter-sepa'),
+                'SWIFT': document.getElementById('filter-swift'),
+                'ON_CHAIN': document.getElementById('filter-onchain')
+            };
+
+            const statusText = document.getElementById('filter-status-text');
+
+            Object.keys(filterButtons).forEach(key => {
+                const btn = filterButtons[key];
+                if (!btn) return;
+                if (key === filter) {
+                    if (key === 'ALL') {
+                        btn.className = "audit-filter-btn px-3 py-1.5 rounded-lg text-xs font-semibold bg-emerald-600 text-white border border-emerald-500 transition duration-150 flex items-center gap-1.5 shadow-sm";
+                    } else if (key === 'SEPA') {
+                        btn.className = "audit-filter-btn px-3 py-1.5 rounded-lg text-xs font-semibold bg-emerald-700 text-white border border-emerald-500 transition duration-150 flex items-center gap-1.5 shadow-sm";
+                    } else if (key === 'SWIFT') {
+                        btn.className = "audit-filter-btn px-3 py-1.5 rounded-lg text-xs font-semibold bg-blue-600 text-white border border-blue-500 transition duration-150 flex items-center gap-1.5 shadow-sm";
+                    } else if (key === 'ON_CHAIN') {
+                        btn.className = "audit-filter-btn px-3 py-1.5 rounded-lg text-xs font-semibold bg-purple-600 text-white border border-purple-500 transition duration-150 flex items-center gap-1.5 shadow-sm";
+                    }
+                } else {
+                    btn.className = "audit-filter-btn px-3 py-1.5 rounded-lg text-xs font-semibold bg-slate-900 hover:bg-slate-800 text-slate-300 hover:text-white border border-slate-700 transition duration-150 flex items-center gap-1.5";
+                }
+            });
+
+            if (statusText) {
+                if (filter === 'ALL') {
+                    statusText.innerHTML = `Visualizzazione: <span class="text-emerald-400 font-bold">Tutti i Circuiti</span>`;
+                } else if (filter === 'SEPA') {
+                    statusText.innerHTML = `Visualizzazione: <span class="text-emerald-400 font-bold">Solo Fiat / SEPA</span>`;
+                } else if (filter === 'SWIFT') {
+                    statusText.innerHTML = `Visualizzazione: <span class="text-blue-400 font-bold">Solo Fiat / SWIFT</span>`;
+                } else if (filter === 'ON_CHAIN') {
+                    statusText.innerHTML = `Visualizzazione: <span class="text-purple-400 font-bold">Solo On-Chain / Web3</span>`;
+                }
+            }
+
+            renderAuditTable();
+        }
+
+        function updateFilterCounters() {
+            let sepaCount = 0;
+            let swiftCount = 0;
+            let onchainCount = 0;
+
+            allAuditLogs.forEach(log => {
+                const rail = (log.rail || '').toUpperCase();
+                if (rail.includes('SEPA') || rail.includes('CBI')) {
+                    sepaCount++;
+                } else if (rail.includes('SWIFT')) {
+                    swiftCount++;
+                } else if (rail.includes('ON_CHAIN') || rail.includes('TOKEN')) {
+                    onchainCount++;
+                }
+            });
+
+            const countAll = document.getElementById('count-all');
+            const countSepa = document.getElementById('count-sepa');
+            const countSwift = document.getElementById('count-swift');
+            const countOnChain = document.getElementById('count-onchain');
+
+            if (countAll) countAll.innerText = allAuditLogs.length;
+            if (countSepa) countSepa.innerText = sepaCount;
+            if (countSwift) countSwift.innerText = swiftCount;
+            if (countOnChain) countOnChain.innerText = onchainCount;
+        }
+
+        function renderAuditTable() {
+            const tbody = document.getElementById('audit-log-body');
+            if (!tbody) return;
+            tbody.innerHTML = '';
+
+            const filteredLogs = allAuditLogs.filter(log => {
+                if (currentAuditFilter === 'ALL') return true;
+                const rail = (log.rail || '').toUpperCase();
+                if (currentAuditFilter === 'SEPA') {
+                    return rail.includes('SEPA') || rail.includes('CBI');
+                }
+                if (currentAuditFilter === 'SWIFT') {
+                    return rail.includes('SWIFT');
+                }
+                if (currentAuditFilter === 'ON_CHAIN') {
+                    return rail.includes('ON_CHAIN') || rail.includes('TOKEN');
+                }
+                return true;
+            });
+
+            if (filteredLogs.length === 0) {
+                const tr = document.createElement('tr');
+                tr.innerHTML = `
+                    <td colspan="9" class="p-8 text-center text-slate-400">
+                        <div class="flex flex-col items-center justify-center gap-2">
+                            <span class="text-2xl">🔍</span>
+                            <span class="font-medium text-slate-300">Nessuna transazione registrata per il filtro "${currentAuditFilter}"</span>
+                            <span class="text-xs text-slate-500">I payout eseguiti su questo canale appariranno automaticamente qui.</span>
+                            <button type="button" onclick="setAuditFilter('ALL')" class="mt-2 px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-xs text-emerald-400 rounded-lg border border-slate-700 transition">
+                                Mostra Tutte le Transazioni
+                            </button>
+                        </div>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+                return;
+            }
+
+            filteredLogs.forEach(log => {
+                const tr = document.createElement('tr');
+                tr.className = "hover:bg-slate-800/40 transition duration-150";
+
+                let railBadge = `<span class="px-2 py-0.5 bg-emerald-950 text-emerald-400 border border-emerald-800 rounded text-[10px]">SEPA TIPS</span>`;
+                if (log.rail === 'SWIFT_GPI' || log.rail === 'SWIFT') {
+                    railBadge = `<span class="px-2 py-0.5 bg-blue-950 text-blue-400 border border-blue-800 rounded text-[10px]">SWIFT GPI</span>`;
+                } else if (log.rail === 'ON_CHAIN') {
+                    railBadge = `<span class="px-2 py-0.5 bg-purple-950 text-purple-400 border border-purple-800 rounded text-[10px]">ON-CHAIN EVM</span>`;
+                }
+
+                let riskClass = "text-emerald-400";
+                if (log.amlRiskScore > 20) riskClass = "text-amber-400";
+                if (log.amlRiskScore > 60) riskClass = "text-rose-400";
+
+                const shortHash = log.hash ? log.hash.substring(0, 8) + '...' + log.hash.substring(log.hash.length - 6) : 'N/A';
+                const fullHash = log.hash || '';
+
+                tr.innerHTML = `
+                    <td class="p-3.5 text-slate-300 font-bold">${log.id}</td>
+                    <td class="p-3.5 text-slate-400">${new Date(log.timestamp).toLocaleTimeString('it-IT')} ${new Date(log.timestamp).toLocaleDateString('it-IT')}</td>
+                    <td class="p-3.5">${railBadge}</td>
+                    <td class="p-3.5 text-slate-300 max-w-xs truncate" title="${log.recipient}">${log.recipient}</td>
+                    <td class="p-3.5 text-right font-bold text-white">${log.currency === 'USD' ? '$' : (log.currency === 'EUR' ? '€' : '')} ${Number(log.amount).toLocaleString('it-IT', { minimumFractionDigits: 2 })} ${log.currency !== 'EUR' && log.currency !== 'USD' ? log.currency : ''}</td>
+                    <td class="p-3.5 text-center ${riskClass}">${log.amlRiskScore}/100</td>
+                    <td class="p-3.5 text-center"><span class="text-emerald-400 font-semibold">${log.status}</span></td>
+                    <td class="p-3.5 text-right text-slate-500 hover:text-slate-300 transition cursor-pointer" title="${fullHash}">${shortHash}</td>
+                    <td class="p-3.5 text-center">
+                        <button onclick="inspectMessage('${log.id}')" class="px-2 py-1 bg-slate-800 hover:bg-slate-700 text-[11px] text-emerald-400 rounded border border-slate-700">
+                            Dettagli
+                        </button>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function updateOracleValuationUI(valuationData) {
+            if (!valuationData) return;
+            liveOracleData = valuationData;
+
+            const val = valuationData.valuation;
+            const oracleData = valuationData.oracleData;
+
+            // Header metrics
+            if (oracleData) {
+                const roundText = (oracleData.roundId || '184467...').toString();
+                document.getElementById('oracle-round-id').innerText = '#' + roundText.substring(0, 10);
+                document.getElementById('oracle-updated-time').innerText = new Date(oracleData.timestamp).toLocaleTimeString('it-IT');
+
+                // Tickers
+                if (oracleData.rates) {
+                    document.getElementById('tick-eth-usd').innerText = '$ ' + Number(oracleData.rates.ETH_USD).toLocaleString('en-US', { minimumFractionDigits: 2 });
+                    document.getElementById('tick-eth-eur').innerText = '€ ' + Number(oracleData.rates.ETH_EUR).toLocaleString('it-IT', { minimumFractionDigits: 2 });
+                    document.getElementById('tick-eur-usd').innerText = Number(oracleData.rates.EUR_USD).toFixed(4);
+                    document.getElementById('rate-eurusd-sub').innerText = Number(oracleData.rates.EUR_USD).toFixed(4);
+                }
+            }
+
+            if (val) {
+                // Consolidated Totals
+                document.getElementById('val-total-eur').innerText = '€ ' + Number(val.totalInEur).toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+                document.getElementById('val-total-usd').innerText = '$ ' + Number(val.totalInUsd).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+                // Allocation Bars
+                document.getElementById('pct-fiat').innerText = val.fiat.sharePercent + '%';
+                document.getElementById('pct-onchain').innerText = val.onChain.sharePercent + '%';
+                document.getElementById('bar-fiat').style.width = val.fiat.sharePercent + '%';
+                document.getElementById('bar-onchain').style.width = val.onChain.sharePercent + '%';
+
+                // On-Chain Valuation Card
+                document.getElementById('val-onchain-eur').innerText = '€ ' + Number(val.onChain.totalEur).toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+                document.getElementById('val-onchain-usd').innerText = '$ ' + Number(val.onChain.totalUsd).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+                document.getElementById('val-eurc-sub').innerText = '€ ' + Number(val.onChain.eurc.valueEur).toLocaleString('it-IT', { minimumFractionDigits: 2 });
+                document.getElementById('val-usdc-sub').innerText = '$ ' + Number(val.onChain.usdc.valueUsd).toLocaleString('en-US', { minimumFractionDigits: 2 }) + ` (€ ${Number(val.onChain.usdc.valueEur).toLocaleString('it-IT', { minimumFractionDigits: 2 })})`;
+                document.getElementById('val-eth-sub').innerText = '€ ' + Number(val.onChain.eth.valueEur).toLocaleString('it-IT', { minimumFractionDigits: 2 }) + ` (${val.onChain.eth.amount} ETH)`;
+
+                // Fiat Valuation Card
+                document.getElementById('val-fiat-eur').innerText = '€ ' + Number(val.fiat.totalEur).toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+                document.getElementById('val-fiat-usd').innerText = '$ ' + Number(val.fiat.totalUsd).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+                document.getElementById('val-fiat-eur-sub').innerText = '€ ' + Number(val.fiat.eurAccount.amount).toLocaleString('it-IT', { minimumFractionDigits: 2 });
+                document.getElementById('val-fiat-usd-sub').innerText = '$ ' + Number(val.fiat.usdAccount.amount).toLocaleString('en-US', { minimumFractionDigits: 2 }) + ` (€ ${Number(val.fiat.usdAccount.valueEur).toLocaleString('it-IT', { minimumFractionDigits: 2 })})`;
+            }
+
+            runInstantConversion();
+        }
+
+        function renderKycOverview(kycData) {
+            if (!kycData) return;
+
+            // Entity details & progress
+            if (kycData.entityName) {
+                document.getElementById('kyc-entity-name').innerText = `${kycData.entityName} (P.IVA: ${kycData.taxId || 'N/A'})`;
+            }
+            if (kycData.completionRate !== undefined) {
+                document.getElementById('kyc-progress-label').innerText = `${kycData.completionRate}% Completato`;
+                document.getElementById('kyc-progress-bar').style.width = `${kycData.completionRate}%`;
+            }
+            if (kycData.currentTier) {
+                const tierName = kycData.currentTier.replace('_', ' ');
+                document.getElementById('kyc-badge-header').innerText = `${tierName} ATTIVO`;
+            }
+
+            // Documents Table
+            const tbody = document.getElementById('kyc-documents-body');
+            if (!tbody || !kycData.documents) return;
+            tbody.innerHTML = '';
+
+            kycData.documents.forEach(doc => {
+                const tr = document.createElement('tr');
+                tr.className = "hover:bg-slate-800/40 transition duration-150";
+
+                let statusBadge = `<span class="px-2 py-0.5 bg-emerald-950 text-emerald-400 border border-emerald-800 rounded text-[10px] font-semibold">VERIFICATO</span>`;
+                let actionBtn = `<button onclick="alert('Documento ${doc.id} verificato ed archiviato con successo nel fascicolo AML istituzionale.')" class="px-2 py-1 bg-slate-800 hover:bg-slate-700 text-[11px] text-emerald-400 rounded border border-slate-700">Visualizza</button>`;
+
+                if (doc.status === 'IN_REVIEW') {
+                    statusBadge = `<span class="px-2 py-0.5 bg-amber-950 text-amber-400 border border-amber-800 rounded text-[10px] font-semibold">IN REVISIONE</span>`;
+                    actionBtn = `<button onclick="alert('Documento attualmente in fase di verifica da parte dell\\'Ufficio Compliance.')" class="px-2 py-1 bg-slate-800 hover:bg-slate-700 text-[11px] text-amber-300 rounded border border-slate-700">In Revisione</button>`;
+                } else if (doc.status === 'REQUIRED') {
+                    statusBadge = `<span class="px-2 py-0.5 bg-rose-950 text-rose-400 border border-rose-800 rounded text-[10px] font-semibold animate-pulse">RICHIESTO</span>`;
+                    actionBtn = `<button onclick="openKycUploadModal('${doc.id}', '${doc.title.replace(/'/g, "\\'")}')" class="px-2.5 py-1 bg-rose-600 hover:bg-rose-500 text-[11px] text-white font-bold rounded shadow transition">Carica File</button>`;
+                } else if (doc.status === 'OPTIONAL') {
+                    statusBadge = `<span class="px-2 py-0.5 bg-slate-800 text-slate-400 border border-slate-700 rounded text-[10px]">FACOLTATIVO</span>`;
+                    actionBtn = `<button onclick="openKycUploadModal('${doc.id}', '${doc.title.replace(/'/g, "\\'")}')" class="px-2 py-1 bg-slate-800 hover:bg-slate-700 text-[11px] text-slate-300 rounded border border-slate-700">Carica</button>`;
+                }
+
+                tr.innerHTML = `
+                    <td class="p-3.5 text-slate-300 font-bold">${doc.id}</td>
+                    <td class="p-3.5 text-white font-medium">
+                        <div>${doc.title}</div>
+                        ${doc.filename ? `<div class="text-[10px] text-slate-500 truncate max-w-xs mt-0.5">File: ${doc.filename}</div>` : ''}
+                    </td>
+                    <td class="p-3.5 text-slate-400">${doc.category}</td>
+                    <td class="p-3.5 text-center">${statusBadge}</td>
+                    <td class="p-3.5 text-slate-300">${doc.expiryDate ? doc.expiryDate : (doc.issuedDate ? 'Emesso ' + doc.issuedDate : 'Richiesto')}</td>
+                    <td class="p-3.5 text-slate-400 text-[11px] truncate max-w-xs" title="${doc.verifiedBy}">${doc.verifiedBy}</td>
+                    <td class="p-3.5 text-center">${actionBtn}</td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function openKycUploadModal(docId, docTitle) {
+            document.getElementById('kyc-upload-doc-id').value = docId;
+            document.getElementById('kyc-modal-doc-id').innerText = docId;
+            document.getElementById('kyc-modal-doc-title').innerText = docTitle;
+            document.getElementById('kyc-upload-filename').value = `${docId.toLowerCase()}_delcoding_signed.pdf`;
+            document.getElementById('kyc-modal').classList.remove('hidden');
+        }
+
+        function closeKycModal() {
+            document.getElementById('kyc-modal').classList.add('hidden');
+        }
+
+        document.getElementById('kyc-upload-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const docId = document.getElementById('kyc-upload-doc-id').value;
+            const filename = document.getElementById('kyc-upload-filename').value;
+            const submitBtn = document.getElementById('kyc-submit-btn');
+
+            submitBtn.innerText = "Caricamento in corso...";
+            submitBtn.disabled = true;
+
+            try {
+                const res = await fetch('/api/platform/kyc-document', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ docId, filename })
+                });
+                const data = await res.json();
+                if (res.ok) {
+                    alert('✓ Documento inviato con successo! Il fascicolo KYC è stato aggiornato in stato "IN REVISIONE".');
+                    closeKycModal();
+                    if (data.kycStatus) {
+                        renderKycOverview(data.kycStatus);
+                    }
+                } else {
+                    alert('Errore nel caricamento: ' + data.error);
+                }
+            } catch (err) {
+                alert('Errore di comunicazione: ' + err.message);
+            } finally {
+                submitBtn.innerText = "Invia per Revisione Compliance";
+                submitBtn.disabled = false;
+            }
+        });
+
+        async function runInstantConversion() {
+            const amount = parseFloat(document.getElementById('convert-amount').value) || 0;
+            const fromAsset = document.getElementById('convert-from').value;
+            const toAsset = document.getElementById('convert-to').value;
+
+            if (amount <= 0) {
+                document.getElementById('convert-result-text').innerText = '0.00 ' + toAsset;
+                return;
+            }
+
+            try {
+                const res = await fetch('/api/platform/convert', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ amount, fromAsset, toAsset })
+                });
+                const data = await res.json();
+                if (res.ok) {
+                    lastConvertedAmount = data.result;
+                    lastConvertedAsset = toAsset;
+
+                    let formattedResult = '';
+                    if (toAsset === 'EUR' || toAsset === 'EURC') {
+                        formattedResult = `€ ${Number(data.result).toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ${toAsset}`;
+                    } else if (toAsset === 'USD' || toAsset === 'USDC') {
+                        formattedResult = `$ ${Number(data.result).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })} ${toAsset}`;
+                    } else if (toAsset === 'ETH') {
+                        formattedResult = `${Number(data.result).toFixed(6)} ETH`;
+                    }
+
+                    document.getElementById('convert-result-text').innerText = `${amount} ${fromAsset} = ${formattedResult}`;
+                    document.getElementById('convert-rate-label').innerText = `1 ${fromAsset} = ${data.rate} ${toAsset} • 1 ${toAsset} = ${data.inverseRate} ${fromAsset}`;
+                    document.getElementById('convert-source-label').innerText = `Oracolo: Round #${data.oracleRoundId ? data.oracleRoundId.substring(0, 8) : 'Live'}`;
+                }
+            } catch (e) {
+                console.warn('Conversion error:', e);
+            }
+        }
+
+        function swapConvertAssets() {
+            const fromSelect = document.getElementById('convert-from');
+            const toSelect = document.getElementById('convert-to');
+            const temp = fromSelect.value;
+            fromSelect.value = toSelect.value;
+            toSelect.value = temp;
+            runInstantConversion();
+        }
+
+        function applyConversionToPayout() {
+            const toAsset = document.getElementById('convert-to').value;
+            if (toAsset === 'EUR') {
+                selectRail('SEPA');
+                document.getElementById('sepa-amount').value = lastConvertedAmount || document.getElementById('convert-amount').value;
+                document.getElementById('payout-form').scrollIntoView({ behavior: 'smooth' });
+            } else if (toAsset === 'USD') {
+                selectRail('SWIFT');
+                document.getElementById('swift-amount').value = lastConvertedAmount || document.getElementById('convert-amount').value;
+                document.getElementById('payout-form').scrollIntoView({ behavior: 'smooth' });
+            } else if (toAsset === 'ETH' || toAsset === 'EURC' || toAsset === 'USDC') {
+                selectRail('ON_CHAIN');
+                document.getElementById('onchain-token').value = toAsset;
+                document.getElementById('onchain-amount').value = lastConvertedAmount || document.getElementById('convert-amount').value;
+                document.getElementById('payout-form').scrollIntoView({ behavior: 'smooth' });
+            }
+        }
+
+        async function connectBrowserWallet() {
+            if (typeof window.ethereum !== 'undefined') {
+                try {
+                    const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
+                    if (accounts && accounts.length > 0) {
+                        connectedUserAddress = accounts[0];
+                        document.getElementById('wallet-btn-text').innerText = connectedUserAddress.substring(0, 6) + '...' + connectedUserAddress.substring(38);
+                        document.getElementById('wallet-status-dot').className = "w-2 h-2 rounded-full bg-emerald-400";
+                        document.getElementById('relayer-status-text').innerText = `Wallet Web3 Utente Connesso: ${connectedUserAddress}`;
+                        document.getElementById('onchain-address').value = connectedUserAddress;
+                    }
+                } catch (e) {
+                    console.warn('Connessione wallet rifiutata:', e);
+                }
+            } else {
+                alert('Nessun provider Web3 (es. MetaMask) rilevato nel browser. Viene utilizzato automaticamente il Relayer Istituzionale EMI.');
+            }
+        }
+
+        async function loadLedgerData() {
+            try {
+                const res = await fetch('/api/platform/overview');
+                if (!res.ok) throw new Error('Impossibile recuperare lo stato del ledger');
+                const data = await res.json();
+
+                // Format Fiat Balances
+                document.getElementById('balance-eur').innerHTML = '&euro; ' + Number(data.fiat.eur.balance).toLocaleString('it-IT', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+                document.getElementById('balance-usd').innerHTML = '$ ' + Number(data.fiat.usd.balance).toLocaleString('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+
+                // Format On-Chain Balances
+                document.getElementById('balance-eurc').innerText = Number(data.onChain.eurc.balance).toLocaleString('it-IT', { minimumFractionDigits: 2 }) + ' EURC';
+                document.getElementById('balance-usdc').innerText = Number(data.onChain.usdc.balance).toLocaleString('en-US', { minimumFractionDigits: 2 }) + ' USDC • ' + data.onChain.eth.balance + ' ETH';
+
+                // Display Relayer Address
+                if (data.walletInfo && data.walletInfo.address) {
+                    document.getElementById('relayer-addr').innerText = data.walletInfo.address.substring(0, 8) + '...' + data.walletInfo.address.substring(38);
+                }
+
+                // Safeguarding
+                if (data.institution && data.institution.safeguardingRatio) {
+                    document.getElementById('safeguarding-ratio').innerText = data.institution.safeguardingRatio.split(' ')[0];
+                }
+
+                // Portfolio & Oracle Valuation
+                if (data.portfolioValuation) {
+                    updateOracleValuationUI(data.portfolioValuation);
+                }
+
+                // KYC Status & Documents
+                if (data.kycStatus) {
+                    renderKycOverview(data.kycStatus);
+                }
+
+                loadAuditLog();
+            } catch (err) {
+                console.error(err);
+            }
+        }
+
+        async function loadAuditLog() {
+            try {
+                const res = await fetch('/api/platform/audit-log');
+                if (!res.ok) return;
+                const data = await res.json();
+                allAuditLogs = data.logs || [];
+                updateFilterCounters();
+                renderAuditTable();
+            } catch (err) {
+                console.error(err);
+            }
+        }
+
+        async function inspectMessage(txId) {
+            if (!txId) return;
+            try {
+                const res = await fetch(`/api/platform/message/${txId}`);
+                if (!res.ok) {
+                    alert('Nessun file o messaggio archiviato per questa transazione o generata precedentemente.');
+                    return;
+                }
+                const data = await res.json();
+                document.getElementById('modal-title').innerText = `Messaggio di Clearing per ${txId}`;
+                document.getElementById('modal-format-badge').innerText = `Standard: ${data.format}`;
+                document.getElementById('modal-content').innerText = data.payload;
+                document.getElementById('msg-modal').classList.remove('hidden');
+            } catch (e) {
+                alert('Errore nel recupero del messaggio: ' + e.message);
+            }
+        }
+
+        function closeModal() {
+            document.getElementById('msg-modal').classList.add('hidden');
+        }
+
+        function copyModalContent() {
+            const content = document.getElementById('modal-content').innerText;
+            navigator.clipboard.writeText(content);
+            alert('Messaggio copiato negli appunti!');
+        }
+
+        async function verifyIntegrity() {
+            const notice = document.getElementById('integrity-notice');
+            notice.className = "p-4 rounded-xl text-xs font-mono bg-slate-950 border border-slate-700 text-slate-300 block";
+            notice.innerHTML = "Verifica crittografica della catena SHA-256 in corso...";
+
+            try {
+                const res = await fetch('/api/platform/verify-ledger');
+                const proof = await res.json();
+
+                if (proof.verified) {
+                    notice.className = "p-4 rounded-xl text-xs font-mono bg-emerald-950/40 border border-emerald-800 text-emerald-300 block";
+                    notice.innerHTML = `
+                        <div class="font-bold flex items-center gap-2 text-sm text-emerald-400">
+                            <span>✓</span> INTEGRIBITÀ DEL CORE LEDGER CERTIFICATA AL 100%
+                        </div>
+                        <div class="mt-2 text-slate-300">
+                            Tutte le ${proof.totalEntries} transazioni registrate sono crittograficamente connesse in catena SHA-256 continua senza alterazioni o manomissioni.
+                        </div>
+                        <div class="mt-1 text-slate-400 text-[11px] truncate">
+                            Genesis Hash: ${proof.genesisHash} | Ultimo Blocco: ${proof.latestHash}
+                        </div>
+                    `;
+                } else {
+                    notice.className = "p-4 rounded-xl text-xs font-mono bg-rose-950/40 border border-rose-800 text-rose-300 block";
+                    notice.innerHTML = "ATTENZIONE: Rilevata incongruenza o tentativo di alterazione nel registro.";
+                }
+            } catch (e) {
+                notice.className = "p-4 rounded-xl text-xs font-mono bg-amber-950/40 border border-amber-800 text-amber-300 block";
+                notice.innerHTML = "Errore durante la verifica: " + e.message;
+            }
+        }
+
+        function exportAuditJson() {
+            const dataToExport = currentAuditFilter === 'ALL' ? allAuditLogs : allAuditLogs.filter(log => {
+                const rail = (log.rail || '').toUpperCase();
+                if (currentAuditFilter === 'SEPA') return rail.includes('SEPA') || rail.includes('CBI');
+                if (currentAuditFilter === 'SWIFT') return rail.includes('SWIFT');
+                if (currentAuditFilter === 'ON_CHAIN') return rail.includes('ON_CHAIN') || rail.includes('TOKEN');
+                return true;
+            });
+
+            const blob = new Blob([JSON.stringify({ filter: currentAuditFilter, total: dataToExport.length, logs: dataToExport }, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `emi_audit_log_${currentAuditFilter.toLowerCase()}_${Date.now()}.json`;
+            a.click();
+        }
+
+        // Payout Form Handler
+        document.getElementById('payout-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const resultBox = document.getElementById('result-box');
+            const resultTitle = document.getElementById('result-title');
+            const resultDesc = document.getElementById('result-desc');
+            const resultBadge = document.getElementById('result-badge');
+            const resultDetails = document.getElementById('result-details');
+            const inspectAction = document.getElementById('inspect-action');
+
+            resultBox.classList.remove('hidden');
+            resultBox.className = "mt-6 p-6 rounded-xl border bg-slate-950 border-amber-500/40 text-amber-300 block";
+            resultTitle.innerText = "Elaborazione sul Core Ledger in corso...";
+            resultDesc.innerText = "Esecuzione controlli AML, verifica firma e invio al gateway...";
+            resultBadge.className = "px-3 py-1 rounded text-xs font-mono bg-amber-950 text-amber-400 border border-amber-800";
+            resultBadge.innerText = "CLEARING";
+            resultDetails.innerHTML = "";
+            inspectAction.classList.add('hidden');
+
+            let payload = { rail: currentRail };
+
+            if (currentRail === 'SEPA') {
+                payload.iban = document.getElementById('sepa-iban').value;
+                payload.beneficiaryName = document.getElementById('sepa-name').value;
+                payload.amount = parseFloat(document.getElementById('sepa-amount').value);
+                payload.remittanceInfo = document.getElementById('sepa-remittance').value;
+            } else if (currentRail === 'SWIFT') {
+                payload.accountNumber = document.getElementById('swift-account').value;
+                payload.swiftBic = document.getElementById('swift-bic').value;
+                payload.beneficiaryName = document.getElementById('swift-name').value;
+                payload.amount = parseFloat(document.getElementById('swift-amount').value);
+                payload.remittanceInfo = document.getElementById('swift-remittance').value;
+            } else if (currentRail === 'ON_CHAIN') {
+                payload.token = document.getElementById('onchain-token').value;
+                payload.recipientAddress = document.getElementById('onchain-address').value;
+                payload.amount = parseFloat(document.getElementById('onchain-amount').value);
+                payload.network = "Ethereum Mainnet (EVM Institutional)";
+                if (connectedUserAddress) {
+                    payload.customSender = connectedUserAddress;
+                }
+            }
+
+            try {
+                const res = await fetch('/api/platform/payout', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                const data = await res.json();
+
+                if (res.ok) {
+                    lastSettledTxId = data.txId;
+                    resultBox.className = "mt-6 p-6 rounded-xl border bg-emerald-950/30 border-emerald-700/60 text-emerald-200 block";
+                    resultTitle.className = "text-lg font-bold text-emerald-400 flex items-center gap-2";
+                    resultTitle.innerHTML = "<span>✓</span> Regolamento Istituzionale Eseguito con Successo";
+                    resultDesc.innerText = data.message;
+                    resultBadge.className = "px-3 py-1 rounded text-xs font-mono bg-emerald-900 text-emerald-300 border border-emerald-600";
+                    resultBadge.innerText = data.railDetails.rail || "SETTLED";
+
+                    let extraDetails = `<div><span class="text-slate-400">ID Transazione:</span> ${data.txId}</div>`;
+                    if (data.railDetails.endToEndId) {
+                        extraDetails += `<div><span class="text-slate-400">EndToEndId SEPA:</span> ${data.railDetails.endToEndId}</div>`;
+                        extraDetails += `<div><span class="text-slate-400">Circuito:</span> ${data.railDetails.network}</div>`;
+                    } else if (data.railDetails.uetr) {
+                        extraDetails += `<div><span class="text-slate-400">SWIFT UETR:</span> ${data.railDetails.uetr}</div>`;
+                        extraDetails += `<div><span class="text-slate-400">Tracker ID:</span> ${data.railDetails.msgId}</div>`;
+                    } else if (data.railDetails.txHash) {
+                        extraDetails += `<div class="col-span-2 truncate"><span class="text-slate-400">Tx Hash EVM:</span> ${data.railDetails.txHash}</div>`;
+                        extraDetails += `<div><span class="text-slate-400">Firma ECDSA:</span> r=${data.railDetails.signature.r.substring(0, 10)}...</div>`;
+                    }
+                    extraDetails += `<div class="col-span-3 text-slate-400 truncate"><span class="text-slate-500">Hash Blocco Ledger:</span> ${data.ledgerEntry.hash}</div>`;
+
+                    resultDetails.innerHTML = extraDetails;
+                    if (data.hasClearingMessage) {
+                        inspectAction.classList.remove('hidden');
+                    }
+                    loadLedgerData();
+                } else {
+                    resultBox.className = "mt-6 p-6 rounded-xl border bg-rose-950/40 border-rose-700/60 text-rose-200 block";
+                    resultTitle.className = "text-lg font-bold text-rose-400 flex items-center gap-2";
+                    resultTitle.innerHTML = "<span>✕</span> Operazione Respinta dalla Compliance";
+                    resultDesc.innerText = data.error;
+                    resultBadge.className = "px-3 py-1 rounded text-xs font-mono bg-rose-900 text-rose-300 border border-rose-600";
+                    resultBadge.innerText = data.blockedByCompliance ? "AML_BLOCKED" : "ERROR";
+                    resultDetails.innerHTML = `<div><span class="text-slate-400">Punteggio Rischio:</span> ${data.riskScore || 'N/A'}/100</div>`;
+                }
+            } catch (err) {
+                resultBox.className = "mt-6 p-6 rounded-xl border bg-rose-950/40 border-rose-700/60 text-rose-200 block";
+                resultTitle.className = "text-lg font-bold text-rose-400";
+                resultTitle.innerText = "Errore di Comunicazione";
+                resultDesc.innerText = err.message;
+            }
+        });
+
+        // Live Oracle Polling every 15 seconds
+        setInterval(async () => {
+            try {
+                const res = await fetch('/api/platform/oracle-rates');
+                if (res.ok) {
+                    const data = await res.json();
+                    updateOracleValuationUI(data);
+                }
+            } catch(e) {}
+        }, 15000);
+
+        // Initial Load
+        loadLedgerData();
+    </script>
+</body>
+</html>

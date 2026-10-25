@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Enterprise Funding & Payout Portal</title>
+    <meta name="description" content="Infrastruttura di pagamento di livello enterprise con regolamento diretto EBICS / CBI e motore di ledger interno proprietario.">
+    <meta property="og:title" content="Enterprise Funding & Payout Portal">
+    <meta property="og:description" content="Infrastruttura di pagamento di livello enterprise con regolamento diretto EBICS / CBI e motore di ledger interno proprietario.">
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-slate-950 text-white min-h-screen flex flex-col justify-center items-center p-6 selection:bg-emerald-500 selection:text-white">
+    <div class="max-w-3xl text-center space-y-8">
+        <!-- EMI Compliance Badge -->
+        <div class="inline-flex items-center gap-2 px-3 py-1 rounded-full text-xs font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+            <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+            Istituto di Moneta Elettronica (EMI) • Regolamentazione EMD2 & AML/CFT
+        </div>
+
+        <h1 class="text-4xl md:text-5xl font-extrabold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-blue-400 via-indigo-300 to-emerald-400">
+            Gateway Istituzionale Fiat & Web3
+        </h1>
+        <p class="text-slate-400 text-lg leading-relaxed max-w-2xl mx-auto">
+            Infrastruttura di regolamento dual-rail di livello bancario: Core Ledger proprietario con conti di moneta elettronica segregati (EUR/USD), connettori SEPA/SWIFT diretti e transazioni on-chain tramite Smart Contract.
+        </p>
+
+        <!-- Quick Stats Overview -->
+        <div class="grid grid-cols-3 gap-3 max-w-xl mx-auto text-left py-2">
+            <div class="bg-slate-900/80 border border-slate-800 p-3 rounded-lg">
+                <div class="text-xs text-slate-400">Canali Fiat</div>
+                <div class="text-sm font-semibold text-emerald-400">SEPA Instant & SWIFT</div>
+            </div>
+            <div class="bg-slate-900/80 border border-slate-800 p-3 rounded-lg">
+                <div class="text-xs text-slate-400">On-Chain EVM</div>
+                <div class="text-sm font-semibold text-blue-400">EURC / USDC / ETH</div>
+            </div>
+            <div class="bg-slate-900/80 border border-slate-800 p-3 rounded-lg">
+                <div class="text-xs text-slate-400">Audit & AML</div>
+                <div class="text-sm font-semibold text-purple-400">Registro SHA-256</div>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 max-w-xl mx-auto pt-2">
+            <a href="/dashboard.html" class="p-6 bg-slate-900 hover:bg-slate-800 rounded-xl border border-slate-800 hover:border-emerald-500/50 transition duration-300 text-left block group shadow-lg">
+                <div class="flex items-center justify-between mb-2">
+                    <h3 class="text-xl font-bold group-hover:text-emerald-400 transition">Cruscotto Payout &rarr;</h3>
+                    <span class="text-xs px-2 py-0.5 rounded bg-emerald-950 text-emerald-400 border border-emerald-800 font-mono">LIVE</span>
+                </div>
+                <p class="text-sm text-slate-400">Visualizza i saldi multi-valuta (EUR, USD, Web3), esegui bonifici istantanei SEPA/SWIFT e trasferimenti on-chain verificati.</p>
+            </a>
+            <a href="/admin/config.html" class="p-6 bg-slate-900 hover:bg-slate-800 rounded-xl border border-slate-800 hover:border-blue-500/50 transition duration-300 text-left block group shadow-lg">
+                <div class="flex items-center justify-between mb-2">
+                    <h3 class="text-xl font-bold group-hover:text-blue-400 transition">Console Rischio & AML &rarr;</h3>
+                    <span class="text-xs px-2 py-0.5 rounded bg-blue-950 text-blue-400 border border-blue-800 font-mono">GOVERNANCE</span>
+                </div>
+                <p class="text-sm text-slate-400">Configura a runtime i limiti di sicurezza EMI, gestisci i livelli KYC, testa la sandbox sanzioni e monitora la riserva di salvaguardia.</p>
+            </a>
+        </div>
+        
+        <div class="text-xs text-slate-500 pt-4">
+            Licenza EMI: EU-EMI-2024/9910-BCE • Regolamento Fondi Direttiva (UE) 2015/2366 (PSD2 / EMD2)
+        </div>
+    </div>
+</body>
+</html>

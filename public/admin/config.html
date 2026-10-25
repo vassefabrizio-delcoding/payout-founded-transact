@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Console Rischio, Compliance & AML - EMI Gateway</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen p-4 md:p-8 font-sans selection:bg-blue-500 selection:text-white">
+    <div class="max-w-5xl mx-auto space-y-8">
+        
+        <!-- Header -->
+        <div class="flex flex-col md:flex-row justify-between items-start md:items-center border-b border-slate-800 pb-6 gap-4">
+            <div>
+                <div class="flex items-center gap-3">
+                    <h1 class="text-3xl font-extrabold text-white tracking-tight">Console Rischio, AML & Governance</h1>
+                    <span class="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-blue-500/10 text-blue-400 border border-blue-500/20 font-mono">
+                        EMD2 / 5AMLD
+                    </span>
+                    <span class="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 font-mono">
+                        ZERO .ENV AUTONOMO
+                    </span>
+                </div>
+                <p class="text-sm text-slate-400 mt-1">
+                    Gestione a runtime dei parametri di conformità dell'Istituto di Moneta Elettronica, massimali di vigilanza e sandbox sanzioni.
+                </p>
+            </div>
+            <div class="flex items-center gap-4 text-sm">
+                <a href="/dashboard.html" class="px-4 py-2 bg-slate-900 hover:bg-slate-800 border border-slate-700 hover:border-emerald-500 text-emerald-400 rounded-lg transition duration-150 flex items-center gap-2">
+                    <span>⚡</span> Cruscotto Payout
+                </a>
+                <a href="/" class="text-slate-400 hover:text-white transition">&larr; Home</a>
+            </div>
+        </div>
+
+        <!-- Safeguarding Reserve Status Card -->
+        <div class="bg-slate-900 border border-slate-800 p-6 rounded-2xl shadow-lg grid grid-cols-1 md:grid-cols-3 gap-6">
+            <div>
+                <span class="text-xs font-semibold uppercase tracking-wider text-slate-400 block mb-1">Passività Moneta Elettronica</span>
+                <span class="text-xl font-mono font-bold text-slate-200" id="stat-liabilities">&euro; 2.151.600,00</span>
+                <span class="text-[11px] text-slate-500 block mt-1">Totale fondi depositati dai clienti (EUR + USD)</span>
+            </div>
+            <div>
+                <span class="text-xs font-semibold uppercase tracking-wider text-slate-400 block mb-1">Attivi Segregati a Salvaguardia</span>
+                <span class="text-xl font-mono font-bold text-emerald-400" id="stat-safeguarded">&euro; 3.172.000,00</span>
+                <span class="text-[11px] text-slate-500 block mt-1" id="safeguard-bank-label">Conti di custodia presso Banca Depositaria Centrale</span>
+            </div>
+            <div>
+                <span class="text-xs font-semibold uppercase tracking-wider text-slate-400 block mb-1">Rapporto di Copertura Riserva</span>
+                <span class="text-xl font-mono font-bold text-amber-400" id="stat-ratio">147.4%</span>
+                <span class="text-[11px] text-emerald-400 block mt-1">✓ Conforme a Direttiva EMD2 (Minimo 100%)</span>
+            </div>
+        </div>
+
+        <!-- Institutional Regulatory Profile (Zero-Env Autonomous) -->
+        <div class="bg-slate-900 border border-slate-800 p-6 rounded-2xl shadow-lg space-y-4">
+            <h2 class="text-base font-bold text-white flex items-center gap-2">
+                <span>🏛️</span> Dati Istituzionali & Autorizzazioni di Vigilanza
+            </h2>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-xs font-mono">
+                <div class="bg-slate-950 p-3 rounded-lg border border-slate-800/80">
+                    <span class="text-slate-400 block mb-1">Ente Regolamentato & Licenza:</span>
+                    <span class="text-white font-bold" id="inst-legal-name">Delcoding Electronic Money Institution S.p.A.</span>
+                    <div class="text-slate-400 text-[11px] mt-1" id="inst-license">Licenza: EU-EMI-2024/9910-BCE • Vigilanza: Banca d'Italia / BCE</div>
+                </div>
+                <div class="bg-slate-950 p-3 rounded-lg border border-slate-800/80">
+                    <span class="text-slate-400 block mb-1">Identificativi Circuiti Interbancari:</span>
+                    <div class="text-emerald-400" id="sepa-routing">CBI/EBICS BIC: EBICSIT22XXX (TIPS SEPA Instant)</div>
+                    <div class="text-blue-400 mt-0.5" id="swift-routing">SWIFT BIC: EMIIE2DXXX (Fedwire Direct)</div>
+                </div>
+                <div class="bg-slate-950 p-3 rounded-lg border border-slate-800/80 md:col-span-2">
+                    <span class="text-slate-400 block mb-1">Relayer Crittografico EVM Istituzionale (Autonomo):</span>
+                    <div class="text-purple-300 truncate" id="inst-wallet">Wallet ECDSA: Caricamento...</div>
+                    <div class="text-slate-500 text-[11px] mt-0.5" id="cert-thumbprint">Certificato ISO 20022 Thumbprint: ...</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Risk Configuration Form -->
+        <div class="bg-slate-900 border border-slate-800 p-6 md:p-8 rounded-2xl shadow-xl space-y-6">
+            <div>
+                <h2 class="text-xl font-bold text-white flex items-center gap-2">
+                    <span>⚙️</span> Limiti Transazionali & Livelli KYC
+                </h2>
+                <p class="text-sm text-slate-400 mt-1">
+                    Le modifiche vengono applicate istantaneamente a runtime sul modulo <code class="text-blue-400 font-mono">src/services/ComplianceAML.js</code> senza interruzioni di servizio.
+                </p>
+            </div>
+
+            <form id="limits-form" class="space-y-6">
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Tetto Massimo Singola Transazione (&euro;)</label>
+                        <input type="number" id="max-single" value="500000" class="w-full bg-slate-800 border border-slate-700 rounded-lg p-3 text-white font-mono focus:border-blue-500 outline-none text-sm">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Limite Giornaliero Cumulativo (&euro;)</label>
+                        <input type="number" id="max-daily" value="2500000" class="w-full bg-slate-800 border border-slate-700 rounded-lg p-3 text-white font-mono focus:border-blue-500 outline-none text-sm">
+                    </div>
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Livello KYC Attivo</label>
+                        <select id="kyc-tier" class="w-full bg-slate-800 border border-slate-700 rounded-lg p-3 text-white focus:border-blue-500 outline-none text-sm">
+                            <option value="TIER_3_ENTERPRISE">Tier 3: Enterprise EMI (Max €500.000)</option>
+                            <option value="TIER_2_STANDARD">Tier 2: Standard CDD (Max €50.000)</option>
+                            <option value="TIER_1_BASIC">Tier 1: Basic Due Diligence (Max €1.000)</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="bg-slate-950 p-4 border border-slate-800 rounded-xl text-xs text-slate-400 space-y-1">
+                    <p class="text-amber-400 font-semibold flex items-center gap-1.5">
+                        <span>⚠️</span> MONITORAGGIO REGOLAMENTARE AUTOMATIZZATO:
+                    </p>
+                    <p>Qualsiasi operazione che superi i limiti o presenti discrepanze nelle liste antiriciclaggio verrà respinta con codice di audit 403 e registrata nel fascicolo SAR (Suspicious Activity Report).</p>
+                </div>
+
+                <div class="flex items-center gap-4">
+                    <button type="submit" class="px-6 py-3 bg-blue-600 hover:bg-blue-500 text-white font-bold rounded-xl shadow-lg hover:shadow-blue-500/20 transition duration-200 text-sm">
+                        Salva e Applica Parametri a Runtime
+                    </button>
+                    <p id="save-msg" class="text-sm text-emerald-400 hidden font-semibold flex items-center gap-1.5">
+                        <span>✓</span> Parametri salvati ed attivi a runtime.
+                    </p>
+                </div>
+            </form>
+        </div>
+
+        <!-- AML & Sanctions Real-Time Testing Sandbox -->
+        <div class="bg-slate-900 border border-slate-800 p-6 md:p-8 rounded-2xl shadow-xl space-y-6">
+            <div>
+                <h2 class="text-xl font-bold text-white flex items-center gap-2">
+                    <span>🔍</span> Sandbox Simulazione AML & Sanction Screening
+                </h2>
+                <p class="text-sm text-slate-400 mt-1">
+                    Verifica preventiva di conformità: inserisci un IBAN, una ragione sociale o un indirizzo wallet EVM per testare i filtri sanzionatori OFAC / EU.
+                </p>
+            </div>
+
+            <form id="sandbox-form" class="grid grid-cols-1 md:grid-cols-3 gap-4 items-end">
+                <div>
+                    <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Identificativo (IBAN o Wallet)</label>
+                    <input type="text" id="test-recipient" placeholder="es. RU123... oppure 0x8576..." class="w-full bg-slate-800 border border-slate-700 rounded-lg p-3 text-white font-mono text-sm focus:border-blue-500 outline-none">
+                </div>
+                <div>
+                    <label class="block text-xs font-semibold text-slate-400 uppercase tracking-wider mb-2">Ragione Sociale / Persona</label>
+                    <input type="text" id="test-name" placeholder="es. Russian Export Corp oppure Acme SRL" class="w-full bg-slate-800 border border-slate-700 rounded-lg p-3 text-white text-sm focus:border-blue-500 outline-none">
+                </div>
+                <div>
+                    <button type="submit" class="w-full px-6 py-3 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-white font-bold rounded-lg transition text-sm">
+                        Esegui Screening AML & PEP
+                    </button>
+                </div>
+            </form>
+
+            <div id="sandbox-result" class="hidden p-4 rounded-xl border text-xs font-mono transition-all">
+                <!-- Sandbox test results -->
+            </div>
+        </div>
+
+    </div>
+
+    <script>
+        async function loadConfig() {
+            try {
+                const res = await fetch('/api/admin/compliance');
+                if (res.ok) {
+                    const data = await res.json();
+                    if (data.config) {
+                        document.getElementById('max-single').value = data.config.maxSingleTx;
+                        document.getElementById('max-daily').value = data.config.maxDailyCumulative;
+                        if (data.config.kycTier) {
+                            document.getElementById('kyc-tier').value = data.config.kycTier;
+                        }
+                    }
+                    if (data.institution) {
+                        document.getElementById('inst-legal-name').innerText = data.institution.legalName || data.institution.name;
+                        document.getElementById('inst-license').innerText = `Licenza: ${data.institution.licenseNumber} • Vigilanza: ${data.institution.supervisoryAuthority}`;
+                    }
+                    if (data.banking) {
+                        document.getElementById('sepa-routing').innerText = `CBI/EBICS BIC: ${data.banking.sepaBic} (IBAN: ${data.banking.sepaIban})`;
+                        document.getElementById('swift-routing').innerText = `SWIFT BIC: ${data.banking.swiftBic} (Acc: ${data.banking.usdAccountNumber})`;
+                        document.getElementById('safeguard-bank-label').innerText = data.banking.depositoryBank;
+                    }
+                    if (data.web3) {
+                        document.getElementById('inst-wallet').innerText = `Wallet ECDSA: ${data.web3.walletAddress}`;
+                        document.getElementById('cert-thumbprint').innerText = `Certificato ISO 20022 Thumbprint: ${data.web3.certificateThumbprint}`;
+                    }
+                }
+            } catch (err) {
+                console.warn(err);
+            }
+        }
+
+        document.getElementById('limits-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const maxSingle = parseFloat(document.getElementById('max-single').value);
+            const maxDaily = parseFloat(document.getElementById('max-daily').value);
+            const kycTier = document.getElementById('kyc-tier').value;
+            const msg = document.getElementById('save-msg');
+
+            try {
+                const res = await fetch('/api/admin/limits', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ maxSingleTx: maxSingle, maxDailyCumulative: maxDaily, kycTier: kycTier })
+                });
+                if (res.ok) {
+                    msg.classList.remove('hidden');
+                    setTimeout(() => msg.classList.add('hidden'), 4000);
+                }
+            } catch (err) {
+                alert('Errore nel salvataggio: ' + err.message);
+            }
+        });
+
+        document.getElementById('sandbox-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const recipient = document.getElementById('test-recipient').value;
+            const counterpartyName = document.getElementById('test-name').value;
+            const resBox = document.getElementById('sandbox-result');
+
+            resBox.className = "p-4 rounded-xl border bg-slate-950 border-slate-700 text-slate-300 block";
+            resBox.innerHTML = "Screening in corso su liste OFAC, EU Sanctions e PEP...";
+
+            const rail = recipient.startsWith('0x') ? 'ON_CHAIN' : 'SEPA';
+
+            try {
+                const res = await fetch('/api/admin/test-screening', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ recipient, counterpartyName, rail, amount: 5000 })
+                });
+                const result = await res.json();
+
+                if (result.approved) {
+                    resBox.className = "p-4 rounded-xl border bg-emerald-950/40 border-emerald-800 text-emerald-300 block";
+                    resBox.innerHTML = `
+                        <div class="font-bold text-sm text-emerald-400">✓ NESSUNA CORRISPONDENZA SANZIONATORIA (CLEAN)</div>
+                        <div class="mt-1 text-slate-300">Il soggetto e l'identificativo forniti hanno superato positivamente tutti i controlli AML/CFT.</div>
+                        <div class="mt-1 text-slate-400">Punteggio di Rischio Calcolato: ${result.riskScore}/100</div>
+                    `;
+                } else {
+                    resBox.className = "p-4 rounded-xl border bg-rose-950/40 border-rose-800 text-rose-300 block";
+                    resBox.innerHTML = `
+                        <div class="font-bold text-sm text-rose-400">✕ SEGNALAZIONE DI CONFORMITÀ - SOGGETTO BLOCCATO</div>
+                        <div class="mt-1 text-slate-200 font-semibold">${result.reason}</div>
+                        <div class="mt-1 text-slate-400">Punteggio di Rischio: ${result.riskScore}/100 (Livello Critico)</div>
+                    `;
+                }
+            } catch (err) {
+                resBox.className = "p-4 rounded-xl border bg-amber-950/40 border-amber-800 text-amber-300 block";
+                resBox.innerHTML = "Errore durante lo screening: " + err.message;
+            }
+        });
+
+        loadConfig();
+    </script>
+</body>
+</html>

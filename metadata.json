@@ -1,0 +1,7 @@
+{
+  "name": "Enterprise Funding & Payout Portal",
+  "description": "Infrastruttura di pagamento di livello enterprise con regolamento diretto EBICS / CBI e motore di ledger interno proprietario.",
+  "capabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}

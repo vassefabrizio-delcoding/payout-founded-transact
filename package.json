@@ -1,0 +1,16 @@
+{
+  "name": "emi-core-banking-web3-gateway",
+  "version": "1.0.0",
+  "description": "Regulated EMI Gateway managing dual-rail Fiat (EUR/USD) and Web3 On-Chain Settlement with Core Ledger, AML/KYC compliance and Audit Trail",
+  "main": "src/app.js",
+  "scripts": {
+    "dev": "node src/app.js",
+    "start": "node src/app.js",
+    "build": "echo 'Build step complete'"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "ethers": "^6.13.0",
+    "express": "^4.19.2"
+  }
+}
